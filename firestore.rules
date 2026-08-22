@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isCircleMember(circleId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid));
+    }
+
+    function isCircleOwner(circleId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/circles/$(circleId)).data.ownerId == request.auth.uid;
+    }
+
+    // 1. User Personal Financial Data (Strict Isolation)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /accounts/{accountId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /transactions/{transactionId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /categories/{categoryId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /budgets/{budgetId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /goals/{goalId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /creditCards/{cardId} {
+        allow read, write: if isOwner(userId);
+
+        match /emis/{emiId} {
+          allow read, write: if isOwner(userId);
+        }
+      }
+
+      match /loans/{loanId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /circles/{circleId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // 2. Shared Circles & Expense Splitting Security
+    match /circles/{circleId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isCircleMember(circleId));
+      allow update, delete: if isCircleOwner(circleId);
+
+      match /members/{memberId} {
+        allow read: if isAuthenticated() && (isCircleMember(circleId) || isCircleOwner(circleId));
+        allow create, update, delete: if isCircleOwner(circleId) || (isAuthenticated() && request.auth.uid == memberId);
+      }
+
+      match /expenses/{expenseId} {
+        allow read: if isCircleMember(circleId) || isCircleOwner(circleId);
+        allow create, update: if isCircleMember(circleId) || isCircleOwner(circleId);
+        allow delete: if isCircleOwner(circleId) || (resource.data.paidByUserId == request.auth.uid);
+      }
+
+      match /settlements/{settlementId} {
+        allow read: if isCircleMember(circleId) || isCircleOwner(circleId);
+        allow create, update: if isCircleMember(circleId) || isCircleOwner(circleId);
+        allow delete: if isCircleOwner(circleId);
+      }
+    }
+  }
+}
