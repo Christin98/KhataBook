@@ -1,6 +1,6 @@
-# 💰 Rupee Khata — Production Personal Finance & Expense Splitting App
+# 💰 KhataKithab — Production Personal Finance & Expense Splitting App
 
-**Rupee Khata** is a full-stack, production-ready personal finance and shared expense splitting web application built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Firebase**.
+**KhataKithab** is a full-stack, production-ready personal finance and shared expense splitting web application built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Firebase**.
 
 ---
 
@@ -85,4 +85,4 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-> **Note**: When running without `.env.local`, Rupee Khata automatically operates in **Demo Mode** with realistic sample data pre-loaded!
+> **Note**: When running without `.env.local`, KhataKithab automatically operates in **Demo Mode** with realistic sample data pre-loaded!

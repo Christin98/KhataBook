@@ -7,9 +7,9 @@ import AppShell from '@/components/layout/AppShell';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Rupee Khata | Personal Finance & Shared Expense Splitting',
+  title: 'KhataKithab | Personal Finance & Shared Expense Splitting',
   description: 'Production-ready personal expense tracker and shared Circles expense splitting platform.',
-  keywords: ['personal finance', 'expense tracker', 'expense splitting', 'rupee khata', 'india finance', 'split bills'],
+  keywords: ['personal finance', 'expense tracker', 'expense splitting', 'khatakithab', 'india finance', 'split bills'],
 };
 
 export default function RootLayout({

@@ -152,7 +152,7 @@ export default function SettingsPage() {
         </div>
 
         <p className="text-xs text-slate-500">
-          Rupee Khata uses Firebase Auth, Firestore offline-first database, & Storage. The same backend schema supports a future Android Jetpack Compose app.
+          KhataKithab uses Firebase Auth, Firestore offline-first database, & Storage. The same backend schema supports a future Android Jetpack Compose app.
         </p>
 
         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border text-xs space-y-2">

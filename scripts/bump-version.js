@@ -28,7 +28,7 @@ const newVersion = `${major}.${minor}.${patch}-beta.${betaNum}`;
 pkg.version = newVersion;
 
 fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
-console.log(`[Rupee Khata Version Bump] Version bumped to ${newVersion}`);
+console.log(`[KhataKithab Version Bump] Version bumped to ${newVersion}`);
 
 // Update constants right after bump
 require('./update-version');

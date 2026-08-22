@@ -117,17 +117,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Load from localStorage on client mount if available
   useEffect(() => {
     try {
-      const savedTxns = localStorage.getItem('rupee_khata_txns');
+      const savedTxns = localStorage.getItem('khatakithab_txns') || localStorage.getItem('rupee_khata_txns');
       if (savedTxns) setTransactions(JSON.parse(savedTxns));
-      const savedAccounts = localStorage.getItem('rupee_khata_accounts');
+      const savedAccounts = localStorage.getItem('khatakithab_accounts') || localStorage.getItem('rupee_khata_accounts');
       if (savedAccounts) setAccounts(JSON.parse(savedAccounts));
-      const savedCircles = localStorage.getItem('rupee_khata_circles');
+      const savedCircles = localStorage.getItem('khatakithab_circles') || localStorage.getItem('rupee_khata_circles');
       if (savedCircles) setCircles(JSON.parse(savedCircles));
-      const savedCExp = localStorage.getItem('rupee_khata_cexpenses');
+      const savedCExp = localStorage.getItem('khatakithab_cexpenses') || localStorage.getItem('rupee_khata_cexpenses');
       if (savedCExp) setCircleExpenses(JSON.parse(savedCExp));
-      const savedSet = localStorage.getItem('rupee_khata_settlements');
+      const savedSet = localStorage.getItem('khatakithab_settlements') || localStorage.getItem('rupee_khata_settlements');
       if (savedSet) setSettlements(JSON.parse(savedSet));
-      const savedCategories = localStorage.getItem('rupee_khata_categories');
+      const savedCategories = localStorage.getItem('khatakithab_categories') || localStorage.getItem('rupee_khata_categories');
       if (savedCategories) setCategories(JSON.parse(savedCategories));
     } catch (e) {
       console.warn('LocalStorage error:', e);
@@ -137,12 +137,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('rupee_khata_txns', JSON.stringify(transactions));
-      localStorage.setItem('rupee_khata_accounts', JSON.stringify(accounts));
-      localStorage.setItem('rupee_khata_circles', JSON.stringify(circles));
-      localStorage.setItem('rupee_khata_cexpenses', JSON.stringify(circleExpenses));
-      localStorage.setItem('rupee_khata_settlements', JSON.stringify(settlements));
-      localStorage.setItem('rupee_khata_categories', JSON.stringify(categories));
+      localStorage.setItem('khatakithab_txns', JSON.stringify(transactions));
+      localStorage.setItem('khatakithab_accounts', JSON.stringify(accounts));
+      localStorage.setItem('khatakithab_circles', JSON.stringify(circles));
+      localStorage.setItem('khatakithab_cexpenses', JSON.stringify(circleExpenses));
+      localStorage.setItem('khatakithab_settlements', JSON.stringify(settlements));
+      localStorage.setItem('khatakithab_categories', JSON.stringify(categories));
     } catch (e) {
       console.warn('Failed saving to localStorage:', e);
     }

@@ -50,7 +50,7 @@ export default function Sidebar() {
           </div>
           <div>
             <h1 className="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>Rupee Khata</span>
+              <span>KhataKithab</span>
               {APP_INFO.isBeta && (
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60">
                   BETA

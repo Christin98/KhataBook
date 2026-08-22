@@ -46,7 +46,7 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                     <Wallet className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="font-bold text-slate-900 dark:text-white">Rupee Khata</h2>
+                    <h2 className="font-bold text-slate-900 dark:text-white">KhataKithab</h2>
                     <p className="text-xs text-brand-600 dark:text-brand-400">Personal & Circles</p>
                   </div>
                 </div>
