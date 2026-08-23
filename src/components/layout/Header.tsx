@@ -3,6 +3,7 @@
 import React from 'react';
 import { Search, Bell, Plus, Sparkles, User as UserIcon, LogIn, LogOut, Cloud, HardDrive } from 'lucide-react';
 import { useData } from '@/context/DataContext';
+import { APP_INFO } from '@/lib/constants';
 
 interface HeaderProps {
   onOpenMobileNav: () => void;
@@ -48,6 +49,18 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
+        {/* Environment Stage Badge */}
+        {APP_INFO.isDev ? (
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />
+            <span>Local Dev</span>
+          </span>
+        ) : APP_INFO.isBeta ? (
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <span>Beta Flight</span>
+          </span>
+        ) : null}
+
         {/* Connection Mode Badge */}
         {firebaseUser ? (
           <span className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
@@ -60,6 +73,7 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
             <span>Local Storage Mode</span>
           </span>
         )}
+
 
         {/* Auth Button or User Profile */}
         {firebaseUser ? (

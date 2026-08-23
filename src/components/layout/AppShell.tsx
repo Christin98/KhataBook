@@ -10,6 +10,7 @@ import AuthModal from '@/components/common/AuthModal';
 import BetaAccessGate from '@/components/common/BetaAccessGate';
 import { useData } from '@/context/DataContext';
 
+import { ShieldCheck } from 'lucide-react';
 import { APP_INFO } from '@/lib/constants';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -33,15 +34,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <footer className="mt-auto py-6 mb-16 lg:mb-0 px-4 sm:px-6 lg:px-8 border-t border-slate-200/60 dark:border-slate-800/60 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-3 max-w-7xl w-full mx-auto">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <span className="font-bold text-slate-600 dark:text-slate-300">{APP_INFO.name}</span>
-              {APP_INFO.isBeta && (
+              {APP_INFO.isDev ? (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300/60">
+                  DEV
+                </span>
+              ) : APP_INFO.isBeta ? (
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
                   Beta
                 </span>
-              )}
+              ) : null}
               <span className="hidden sm:inline">•</span>
               <span className="text-center sm:text-left text-slate-500 dark:text-slate-400">{APP_INFO.description}</span>
             </div>
-            <div className="flex items-center gap-3 text-[11px]">
+            <div className="flex flex-wrap items-center gap-2.5 text-[11px]">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80 text-[10px] font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Client-Side AES-256 Encrypted</span>
+              </span>
               <span className="font-mono bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 font-semibold">
                 {APP_INFO.version}
               </span>

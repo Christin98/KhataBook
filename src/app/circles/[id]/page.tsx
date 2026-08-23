@@ -37,6 +37,8 @@ export default function CircleDetailPage() {
     settlements,
     addCircleExpense,
     addSettlement,
+    accounts,
+    addTransaction,
     user
   } = useData();
 
@@ -52,17 +54,56 @@ export default function CircleDetailPage() {
   const [splitType, setSplitType] = useState<'equal' | 'exact' | 'percentage' | 'shares'>('equal');
   const [splitMode, setSplitMode] = useState<'all' | 'custom'>('all');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [recordPersonalTxn, setRecordPersonalTxn] = useState(true);
+  const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
 
   useEffect(() => {
     if (circle) {
       setSelectedMemberIds(circle.members.map((m) => m.id));
+      const userMember = circle.members.find(
+        (m) =>
+          m.id === user.id ||
+          m.userId === user.id ||
+          m.role === 'owner' ||
+          m.name.toLowerCase().includes('(you)')
+      );
+      if (userMember) {
+        setPaidByUserId(userMember.id);
+      }
     }
-  }, [circle]);
+  }, [circle, user.id]);
+
+  useEffect(() => {
+    if (accounts.length > 0 && !selectedAccountId) {
+      setSelectedAccountId(accounts[0].id);
+    }
+  }, [accounts, selectedAccountId]);
 
   // Settlement Form State
   const [settlePayerId, setSettlePayerId] = useState('');
   const [settlePayeeId, setSettlePayeeId] = useState('');
   const [settleAmount, setSettleAmount] = useState('');
+  const [recordSettlePersonalTxn, setRecordSettlePersonalTxn] = useState(true);
+  const [settleAccountId, setSettleAccountId] = useState(accounts[0]?.id || '');
+
+  useEffect(() => {
+    if (accounts.length > 0 && !settleAccountId) {
+      setSettleAccountId(accounts[0].id);
+    }
+  }, [accounts, settleAccountId]);
+
+  const isUserMember = (memberId: string) => {
+    if (!circle || !memberId) return false;
+    const m = circle.members.find((mem) => mem.id === memberId);
+    if (!m) return false;
+    return (
+      m.id === user.id ||
+      m.userId === user.id ||
+      m.role === 'owner' ||
+      m.name.toLowerCase().includes('(you)') ||
+      (user.displayName && m.name.toLowerCase().includes(user.displayName.toLowerCase()))
+    );
+  };
 
   if (!circle) {
     return (
@@ -132,6 +173,20 @@ export default function CircleDetailPage() {
       splits
     });
 
+    // Auto-record personal transaction and debit account if paid by current user
+    if (isUserMember(paidMember.id) && recordPersonalTxn && selectedAccountId) {
+      addTransaction({
+        userId: user.id,
+        type: 'expense',
+        amount: numAmount,
+        category: 'Circles & Friends',
+        description: `[${circle.name}] ${expenseTitle || 'Group Expense'}`,
+        date: new Date().toISOString().split('T')[0],
+        accountId: selectedAccountId,
+        notes: `Paid ₹${numAmount} for circle "${circle.name}" (${circle.category})`
+      });
+    }
+
     setIsAddExpenseOpen(false);
     setExpenseTitle('');
     setExpenseAmount('');
@@ -160,6 +215,35 @@ export default function CircleDetailPage() {
       status: 'completed',
       notes: 'Recorded Settlement'
     });
+
+    // Auto-record personal transaction if user is payer (debit) or payee (credit)
+    if (recordSettlePersonalTxn && settleAccountId) {
+      if (isUserMember(payer.id)) {
+        // User paid someone to settle debt -> Expense transaction
+        addTransaction({
+          userId: user.id,
+          type: 'expense',
+          amount: numAmount,
+          category: 'Settlement',
+          description: `[${circle.name}] Settled with ${payee.name}`,
+          date: new Date().toISOString().split('T')[0],
+          accountId: settleAccountId,
+          notes: `Settlement payment to ${payee.name} in circle "${circle.name}"`
+        });
+      } else if (isUserMember(payee.id)) {
+        // Someone paid the user -> Income transaction
+        addTransaction({
+          userId: user.id,
+          type: 'income',
+          amount: numAmount,
+          category: 'Settlement',
+          description: `[${circle.name}] Received from ${payer.name}`,
+          date: new Date().toISOString().split('T')[0],
+          accountId: settleAccountId,
+          notes: `Settlement received from ${payer.name} in circle "${circle.name}"`
+        });
+      }
+    }
 
     // Celebratory confetti animation on settlement!
     confetti({
@@ -375,6 +459,42 @@ export default function CircleDetailPage() {
                 </select>
               </div>
 
+              {/* Personal Account Debit Integration */}
+              {isUserMember(paidByUserId) && (
+                <div className="p-3.5 rounded-2xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 text-xs font-bold text-brand-900 dark:text-brand-200 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={recordPersonalTxn}
+                        onChange={(e) => setRecordPersonalTxn(e.target.checked)}
+                        className="rounded text-brand-600 focus:ring-brand-500 w-4 h-4"
+                      />
+                      <span>Debit from My Personal Account</span>
+                    </label>
+                    <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold uppercase">Auto-Ledger</span>
+                  </div>
+                  {recordPersonalTxn && accounts.length > 0 && (
+                    <div className="space-y-1">
+                      <select
+                        value={selectedAccountId}
+                        onChange={(e) => setSelectedAccountId(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-brand-200 dark:border-brand-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      >
+                        {accounts.map((acc) => (
+                          <option key={acc.id} value={acc.id}>
+                            {acc.name} ({acc.type.toUpperCase()}) • ₹{acc.currentBalance.toLocaleString('en-IN')}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        ₹{expenseAmount || 0} will be debited from this account and logged under personal transactions.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Split Between: All vs Specific Members */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -517,6 +637,61 @@ export default function CircleDetailPage() {
                 />
               </div>
 
+              {/* Personal Ledger Sync for Settlement */}
+              {isUserMember(settlePayerId) && (
+                <div className="p-3.5 rounded-2xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-rose-900 dark:text-rose-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={recordSettlePersonalTxn}
+                      onChange={(e) => setRecordSettlePersonalTxn(e.target.checked)}
+                      className="rounded text-rose-600 focus:ring-rose-500 w-4 h-4"
+                    />
+                    <span>Debit ₹{settleAmount || 0} from My Account (Expense)</span>
+                  </label>
+                  {recordSettlePersonalTxn && accounts.length > 0 && (
+                    <select
+                      value={settleAccountId}
+                      onChange={(e) => setSettleAccountId(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                    >
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name} • ₹{acc.currentBalance.toLocaleString('en-IN')}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {isUserMember(settlePayeeId) && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-emerald-900 dark:text-emerald-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={recordSettlePersonalTxn}
+                      onChange={(e) => setRecordSettlePersonalTxn(e.target.checked)}
+                      className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                    />
+                    <span>Deposit ₹{settleAmount || 0} into My Account (Income)</span>
+                  </label>
+                  {recordSettlePersonalTxn && accounts.length > 0 && (
+                    <select
+                      value={settleAccountId}
+                      onChange={(e) => setSettleAccountId(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                    >
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name} • ₹{acc.currentBalance.toLocaleString('en-IN')}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setIsSettleOpen(false)} className="flex-1 py-2.5 rounded-xl border text-xs font-bold">
                   Cancel
@@ -532,3 +707,4 @@ export default function CircleDetailPage() {
     </div>
   );
 }
+

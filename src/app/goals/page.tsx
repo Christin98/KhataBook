@@ -21,7 +21,7 @@ import { APP_INFO } from '@/lib/constants';
 import UnderDevelopmentScreen from '@/components/common/UnderDevelopmentScreen';
 
 export default function GoalsPage() {
-  const { goals, addGoal, updateGoal, accounts, user } = useData();
+  const { goals, addGoal, updateGoal, accounts, user, isDevMode } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const [name, setName] = useState('');
@@ -230,8 +230,10 @@ export default function GoalsPage() {
     </div>
   );
 
-  // If in Production, show UnderDevelopmentScreen with preview option
-  if (!APP_INFO.isBeta) {
+  // Only lock if in pure production (unlocked in Dev mode, Beta Flight, and for Developers)
+  const isLockedInProduction = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode;
+
+  if (isLockedInProduction) {
     return (
       <UnderDevelopmentScreen
         featureName="Savings & Wealth Goals"

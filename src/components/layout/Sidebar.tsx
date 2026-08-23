@@ -39,7 +39,7 @@ export const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout } = useData();
+  const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout, isDevMode } = useData();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-screen sticky top-0 z-30 select-none">
@@ -52,11 +52,15 @@ export default function Sidebar() {
           <div>
             <h1 className="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>KhataKithab</span>
-              {APP_INFO.isBeta && (
+              {APP_INFO.isDev ? (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300/60 dark:border-purple-700/60 shadow-sm">
+                  DEV
+                </span>
+              ) : APP_INFO.isBeta ? (
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60">
                   BETA
                 </span>
-              )}
+              ) : null}
             </h1>
             <span className="text-[11px] font-medium text-brand-600 dark:text-brand-400">
               Personal & Shared Finance
@@ -81,7 +85,7 @@ export default function Sidebar() {
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
-          const isUnderDevInProd = !APP_INFO.isBeta && ['/budgets', '/goals', '/reminders'].includes(item.href);
+          const isUnderDevInProd = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode && ['/budgets', '/goals', '/reminders'].includes(item.href);
 
           return (
             <Link

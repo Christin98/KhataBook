@@ -25,7 +25,7 @@ interface MobileNavProps {
 
 export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const pathname = usePathname();
-  const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout } = useData();
+  const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout, isDevMode } = useData();
 
   const primaryMobileNav = [
     { label: 'Home', href: '/', icon: LayoutDashboard },
@@ -48,7 +48,18 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                     <Wallet className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="font-bold text-slate-900 dark:text-white">KhataKithab</h2>
+                    <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>KhataKithab</span>
+                      {APP_INFO.isDev ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300/60">
+                          DEV
+                        </span>
+                      ) : APP_INFO.isBeta ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/60">
+                          BETA
+                        </span>
+                      ) : null}
+                    </h2>
                     <p className="text-xs text-brand-600 dark:text-brand-400">Personal & Circles</p>
                   </div>
                 </div>
@@ -61,7 +72,7 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                   const Icon = item.icon;
-                  const isUnderDevInProd = !APP_INFO.isBeta && ['/budgets', '/goals', '/reminders'].includes(item.href);
+                  const isUnderDevInProd = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode && ['/budgets', '/goals', '/reminders'].includes(item.href);
 
                   return (
                     <Link

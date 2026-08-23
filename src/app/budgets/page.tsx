@@ -18,7 +18,7 @@ import { APP_INFO } from '@/lib/constants';
 import UnderDevelopmentScreen from '@/components/common/UnderDevelopmentScreen';
 
 export default function BudgetsPage() {
-  const { budgets, addBudget, user } = useData();
+  const { budgets, addBudget, user, isDevMode } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const [category, setCategory] = useState('Food & Dining');
@@ -220,8 +220,10 @@ export default function BudgetsPage() {
     </div>
   );
 
-  // If in Production, show UnderDevelopmentScreen with preview option
-  if (!APP_INFO.isBeta) {
+  // Only lock if in pure production (unlocked in Dev mode, Beta Flight, and for Developers)
+  const isLockedInProduction = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode;
+
+  if (isLockedInProduction) {
     return (
       <UnderDevelopmentScreen
         featureName="Monthly Category Budgets"
@@ -238,4 +240,5 @@ export default function BudgetsPage() {
 
   return mainBudgetContent;
 }
+
 

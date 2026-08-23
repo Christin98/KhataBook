@@ -20,7 +20,7 @@ import { APP_INFO } from '@/lib/constants';
 import UnderDevelopmentScreen from '@/components/common/UnderDevelopmentScreen';
 
 export default function RemindersPage() {
-  const { reminders, addReminder, markReminderPaid, accounts, user } = useData();
+  const { reminders, addReminder, markReminderPaid, accounts, user, isDevMode } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -246,8 +246,10 @@ export default function RemindersPage() {
     </div>
   );
 
-  // If in Production, show UnderDevelopmentScreen with preview option
-  if (!APP_INFO.isBeta) {
+  // Only lock if in pure production (unlocked in Dev mode, Beta Flight, and for Developers)
+  const isLockedInProduction = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode;
+
+  if (isLockedInProduction) {
     return (
       <UnderDevelopmentScreen
         featureName="Bill & Payment Reminders"
