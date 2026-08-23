@@ -13,8 +13,11 @@ import {
   Loan,
   Budget,
   Goal,
-  Reminder
+  Reminder,
+  AppNotification,
+  NotificationType
 } from '@/lib/types';
+import { APP_INFO } from '@/lib/constants';
 import {
   auth,
   googleProvider,
@@ -76,6 +79,21 @@ interface DataContextType {
   setIsQuickAddOpen: (open: boolean) => void;
   isSearchModalOpen: boolean;
   setIsSearchModalOpen: (open: boolean) => void;
+  isNotificationDrawerOpen: boolean;
+  setIsNotificationDrawerOpen: (open: boolean) => void;
+  isWhatsNewOpen: boolean;
+  setIsWhatsNewOpen: (open: boolean) => void;
+  
+  // Notification Center
+  notifications: AppNotification[];
+  unreadNotificationCount: number;
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  clearNotification: (id: string) => void;
+  clearAllNotifications: () => void;
+  browserNotificationPermission: NotificationPermission;
+  requestBrowserNotificationPermission: () => Promise<NotificationPermission>;
+  sendBrowserNotification: (title: string, options?: NotificationOptions) => void;
   
   // Auth Methods
   signInWithGoogle: () => Promise<void>;
@@ -156,10 +174,38 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isQuickAddOpen, setIsQuickAddOpen] = useState<boolean>(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
+  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState<boolean>(false);
+  const [isWhatsNewOpen, setIsWhatsNewOpen] = useState<boolean>(false);
+
+  // Notification State
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
+  const [browserNotificationPermission, setBrowserNotificationPermission] = useState<NotificationPermission>('default');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedRead = localStorage.getItem('khatakithab_read_notifications');
+        if (savedRead) setReadNotificationIds(JSON.parse(savedRead));
+
+        const savedDismissed = localStorage.getItem('khatakithab_dismissed_notifications');
+        if (savedDismissed) setDismissedNotificationIds(JSON.parse(savedDismissed));
+
+        if ('Notification' in window) {
+          setBrowserNotificationPermission(Notification.permission);
+        }
+
+        // Check if new version was released
+        const lastSeenVersion = localStorage.getItem('khatakithab_last_seen_version');
+        if (!lastSeenVersion) {
+          localStorage.setItem('khatakithab_last_seen_version', APP_INFO.version);
+        }
+      } catch (e) {}
+    }
+  }, []);
   const [cryptoKey, setCryptoKey] = useState<CryptoKey | undefined>(undefined);
 
   // 1. Listen to Firebase Authentication state
@@ -602,6 +648,203 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Dynamic Notification Generation Engine
+  const generateNotifications = (): AppNotification[] => {
+    const list: AppNotification[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Reminders Notifications
+    reminders.forEach((r) => {
+      if (r.status === 'paid') return;
+      const due = new Date(r.dueDate);
+      due.setHours(0, 0, 0, 0);
+
+      const diffTime = due.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        list.push({
+          id: `reminder-overdue-${r.id}`,
+          type: 'reminder',
+          title: `Overdue: ${r.title}`,
+          message: `Bill of ₹${r.amount.toLocaleString('en-IN')} was due on ${r.dueDate} (${Math.abs(diffDays)} days ago).`,
+          date: r.dueDate,
+          read: readNotificationIds.includes(`reminder-overdue-${r.id}`),
+          priority: 'high',
+          link: '/reminders',
+          actionLabel: 'Mark Paid',
+          metadata: { reminderId: r.id, amount: r.amount, dueDate: r.dueDate, category: r.category }
+        });
+      } else if (diffDays === 0) {
+        list.push({
+          id: `reminder-today-${r.id}`,
+          type: 'reminder',
+          title: `Due Today: ${r.title}`,
+          message: `Payment of ₹${r.amount.toLocaleString('en-IN')} is scheduled for today.`,
+          date: 'Today',
+          read: readNotificationIds.includes(`reminder-today-${r.id}`),
+          priority: 'high',
+          link: '/reminders',
+          actionLabel: 'Mark Paid',
+          metadata: { reminderId: r.id, amount: r.amount, dueDate: r.dueDate, category: r.category }
+        });
+      } else if (diffDays <= 3) {
+        list.push({
+          id: `reminder-upcoming-${r.id}`,
+          type: 'reminder',
+          title: `Upcoming: ${r.title}`,
+          message: `₹${r.amount.toLocaleString('en-IN')} due in ${diffDays} day${diffDays > 1 ? 's' : ''} (${r.dueDate}).`,
+          date: `In ${diffDays}d`,
+          read: readNotificationIds.includes(`reminder-upcoming-${r.id}`),
+          priority: 'medium',
+          link: '/reminders',
+          actionLabel: 'View Bill',
+          metadata: { reminderId: r.id, amount: r.amount, dueDate: r.dueDate, category: r.category }
+        });
+      }
+    });
+
+    // 2. Budget Alerts
+    budgets.forEach((b) => {
+      if (b.monthlyLimit <= 0) return;
+      const ratio = b.spent / b.monthlyLimit;
+      if (ratio >= 1.0) {
+        list.push({
+          id: `budget-exceeded-${b.id}`,
+          type: 'budget',
+          title: `Budget Exceeded: ${b.category}`,
+          message: `You've spent ₹${b.spent.toLocaleString('en-IN')} of your ₹${b.monthlyLimit.toLocaleString('en-IN')} cap (${Math.round(ratio * 100)}%).`,
+          date: 'This Month',
+          read: readNotificationIds.includes(`budget-exceeded-${b.id}`),
+          priority: 'high',
+          link: '/budgets',
+          actionLabel: 'Adjust Budget',
+          metadata: { category: b.category, amount: b.spent }
+        });
+      } else if (ratio >= 0.8) {
+        list.push({
+          id: `budget-warning-${b.id}`,
+          type: 'budget',
+          title: `Budget Warning: ${b.category}`,
+          message: `You've reached ${Math.round(ratio * 100)}% of your ₹${b.monthlyLimit.toLocaleString('en-IN')} budget.`,
+          date: 'This Month',
+          read: readNotificationIds.includes(`budget-warning-${b.id}`),
+          priority: 'medium',
+          link: '/budgets',
+          actionLabel: 'View Budgets',
+          metadata: { category: b.category, amount: b.spent }
+        });
+      }
+    });
+
+    // 3. Circles Activity
+    circles.forEach((c) => {
+      if (c.outstandingAmount > 0) {
+        list.push({
+          id: `circle-outstanding-${c.id}`,
+          type: 'circle',
+          title: `Circle Balance: ${c.name}`,
+          message: `You have ₹${c.outstandingAmount.toLocaleString('en-IN')} unsettled balance in this group.`,
+          date: 'Active',
+          read: readNotificationIds.includes(`circle-outstanding-${c.id}`),
+          priority: 'medium',
+          link: `/circles/${c.id}`,
+          actionLabel: 'Settle Up',
+          metadata: { circleId: c.id, amount: c.outstandingAmount }
+        });
+      }
+    });
+
+    // 4. Version Update Notification
+    list.push({
+      id: `app-release-${APP_INFO.version}`,
+      type: 'update',
+      title: `KhataKithab ${APP_INFO.version} Live!`,
+      message: `Notification Center, Auto-Ledger Circle Sync, and AES-256 Encryption are now live.`,
+      date: APP_INFO.build.split('.')[0] + '-' + APP_INFO.build.split('.')[1],
+      read: readNotificationIds.includes(`app-release-${APP_INFO.version}`),
+      priority: 'low',
+      actionLabel: "What's New",
+      metadata: { version: APP_INFO.version }
+    });
+
+    return list.filter((n) => !dismissedNotificationIds.includes(n.id));
+  };
+
+  const notifications = generateNotifications();
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
+
+  const markNotificationAsRead = (id: string) => {
+    setReadNotificationIds((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('khatakithab_read_notifications', JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
+  const markAllNotificationsAsRead = () => {
+    const allIds = notifications.map((n) => n.id);
+    setReadNotificationIds(allIds);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('khatakithab_read_notifications', JSON.stringify(allIds));
+    }
+  };
+
+  const clearNotification = (id: string) => {
+    setDismissedNotificationIds((prev) => {
+      const next = [...prev, id];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('khatakithab_dismissed_notifications', JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
+  const clearAllNotifications = () => {
+    const allIds = notifications.map((n) => n.id);
+    setDismissedNotificationIds((prev) => {
+      const next = Array.from(new Set([...prev, ...allIds]));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('khatakithab_dismissed_notifications', JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
+  const requestBrowserNotificationPermission = async (): Promise<NotificationPermission> => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const permission = await Notification.requestPermission();
+        setBrowserNotificationPermission(permission);
+        if (permission === 'granted') {
+          new Notification('KhataKithab Notifications Enabled', {
+            body: 'You will now receive alerts for upcoming bill due dates & budget limits.',
+            icon: '/icon.png'
+          });
+        }
+        return permission;
+      } catch (e) {
+        return 'denied';
+      }
+    }
+    return 'denied';
+  };
+
+  const sendBrowserNotification = (title: string, options?: NotificationOptions) => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          icon: '/icon.png',
+          ...options
+        });
+      } catch (e) {}
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -631,6 +874,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setIsQuickAddOpen,
         isSearchModalOpen,
         setIsSearchModalOpen,
+        isNotificationDrawerOpen,
+        setIsNotificationDrawerOpen,
+        isWhatsNewOpen,
+        setIsWhatsNewOpen,
+        notifications,
+        unreadNotificationCount,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        clearNotification,
+        clearAllNotifications,
+        browserNotificationPermission,
+        requestBrowserNotificationPermission,
+        sendBrowserNotification,
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,

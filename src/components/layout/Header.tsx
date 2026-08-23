@@ -17,7 +17,9 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
     firebaseUser,
     setIsAuthModalOpen,
     logout,
-    isDemoMode
+    isDemoMode,
+    unreadNotificationCount,
+    setIsNotificationDrawerOpen
   } = useData();
 
   return (
@@ -123,11 +125,16 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
 
         {/* Notification Bell */}
         <button
-          className="p-2 rounded-full text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 relative"
-          title="Upcoming Reminders & Alerts"
+          onClick={() => setIsNotificationDrawerOpen(true)}
+          className="p-2 rounded-full text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 relative transition-all active:scale-95"
+          title="Notification Center & Alarms"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
+          {unreadNotificationCount > 0 && (
+            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white font-extrabold text-[10px] flex items-center justify-center ring-2 ring-white dark:ring-slate-900 animate-pulse">
+              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+            </span>
+          )}
         </button>
       </div>
     </header>

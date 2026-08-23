@@ -209,3 +209,46 @@ export interface FinancialHealthScore {
   upcomingDueCount: number;
   insights: string[];
 }
+
+export type NotificationType = 'reminder' | 'budget' | 'circle' | 'update' | 'system';
+export type NotificationPriority = 'low' | 'medium' | 'high';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  priority: NotificationPriority;
+  link?: string;
+  actionLabel?: string;
+  metadata?: {
+    reminderId?: string;
+    amount?: number;
+    dueDate?: string;
+    category?: string;
+    circleId?: string;
+    version?: string;
+  };
+}
+
+export interface ChangelogFeature {
+  title: string;
+  description: string;
+  icon?: string;
+  tag?: string;
+}
+
+export interface ChangelogRelease {
+  version: string;
+  stage: string;
+  date: string;
+  title: string;
+  summary: string;
+  highlights: string[];
+  features: ChangelogFeature[];
+  fixes?: string[];
+  isCurrent?: boolean;
+}
+

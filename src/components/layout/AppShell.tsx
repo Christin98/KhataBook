@@ -8,6 +8,8 @@ import QuickAddModal from '@/components/common/QuickAddModal';
 import GlobalSearchModal from '@/components/common/GlobalSearchModal';
 import AuthModal from '@/components/common/AuthModal';
 import BetaAccessGate from '@/components/common/BetaAccessGate';
+import NotificationDrawer from '@/components/common/NotificationDrawer';
+import WhatsNewModal from '@/components/common/WhatsNewModal';
 import { useData } from '@/context/DataContext';
 
 import { ShieldCheck } from 'lucide-react';
@@ -15,7 +17,14 @@ import { APP_INFO } from '@/lib/constants';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const { isAuthModalOpen, setIsAuthModalOpen } = useData();
+  const {
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    isNotificationDrawerOpen,
+    setIsNotificationDrawerOpen,
+    isWhatsNewOpen,
+    setIsWhatsNewOpen
+  } = useData();
 
   return (
     <BetaAccessGate>
@@ -62,10 +71,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile Drawer & Navigation */}
         <MobileNav isOpen={isMobileNavOpen} onClose={() => setIsMobileNavOpen(false)} />
 
-        {/* Global Modals */}
+        {/* Global Modals & Drawers */}
         <QuickAddModal />
         <GlobalSearchModal />
         <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+        <NotificationDrawer isOpen={isNotificationDrawerOpen} onClose={() => setIsNotificationDrawerOpen(false)} />
+        <WhatsNewModal isOpen={isWhatsNewOpen} onClose={() => setIsWhatsNewOpen(false)} />
       </div>
     </BetaAccessGate>
   );
