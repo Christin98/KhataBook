@@ -1,12 +1,35 @@
 {
   "prod": [
     {
+      "version": "v0.3.11",
+      "stage": "Production Stable",
+      "date": "2026-08-23",
+      "title": "feat: implement automated release pipeline for beta and production deployment workflows",
+      "summary": "Production release: feat: implement automated release pipeline for beta and production deployment workflows",
+      "isCurrent": true,
+      "highlights": [
+        "🌟 Official Release v0.3.11",
+        "⚡ Complete production security & encryption compliance",
+        "💎 High-performance release bundle on Netlify CDN"
+      ],
+      "features": [
+        {
+          "title": "feat: implement automated release pipeline for beta and production deployment workflows",
+          "description": "Stable feature enhancements promoted after successful beta testing.",
+          "tag": "Stable"
+        }
+      ],
+      "fixes": [
+        "Full test harness and flight testing verified"
+      ]
+    },
+    {
       "version": "v0.3.1",
       "stage": "Production Stable",
       "date": "2026-08-23",
       "title": "Circle Auto-Ledger & Client-Side AES-256 Encryption",
       "summary": "Direct personal ledger integration for shared circle expenses and end-to-end client-side encryption.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "💳 Circle Auto-Ledger: Auto-deduct group expenses & settlements from personal accounts",
         "🔐 AES-256-GCM Zero-Knowledge Financial Data Encryption",
@@ -51,7 +74,8 @@
           "description": "Experimental modules are showcased safely with waitlist & preview capabilities.",
           "tag": "Architecture"
         }
-      ]
+      ],
+      "isCurrent": false
     },
     {
       "version": "v0.2.0",
@@ -70,7 +94,8 @@
           "description": "Create shared expense circles with friends, roommates, and travel groups.",
           "tag": "Circles"
         }
-      ]
+      ],
+      "isCurrent": false
     }
   ],
   "beta": [
@@ -149,12 +174,31 @@
   ],
   "dev": [
     {
+      "version": "v0.3.11-beta.1",
+      "stage": "Local Dev",
+      "date": "2026-08-23",
+      "title": "Local Dev Build v0.3.11-beta.1",
+      "summary": "Automated build record created on 2026-08-23 at 2026.08.23.2239.",
+      "isCurrent": true,
+      "highlights": [
+        "Build v0.3.11-beta.1 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
       "version": "v0.3.11-beta.6",
       "stage": "Local Dev",
       "date": "2026-08-23",
       "title": "Local Dev Build v0.3.11-beta.6",
       "summary": "Automated build record created on 2026-08-23 at 2026.08.23.2237.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "Build v0.3.11-beta.6 (Local Dev)",
         "Automated changelog preservation"
