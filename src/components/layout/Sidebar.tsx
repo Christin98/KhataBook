@@ -81,6 +81,7 @@ export default function Sidebar() {
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
+          const isUnderDevInProd = !APP_INFO.isBeta && ['/budgets', '/goals', '/reminders'].includes(item.href);
 
           return (
             <Link
@@ -96,15 +97,20 @@ export default function Sidebar() {
                 <Icon className={`w-4 h-4 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </div>
-              {item.badge && (
+              {isUnderDevInProd ? (
+                <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60">
+                  Soon
+                </span>
+              ) : item.badge ? (
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
                   {item.badge}
                 </span>
-              )}
+              ) : null}
             </Link>
           );
         })}
       </nav>
+
 
       {/* Footer Profile summary & Version Info */}
       <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">

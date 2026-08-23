@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { NAV_ITEMS } from './Sidebar';
 import { useData } from '@/context/DataContext';
+import { APP_INFO } from '@/lib/constants';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -60,19 +61,32 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                   const Icon = item.icon;
+                  const isUnderDevInProd = !APP_INFO.isBeta && ['/budgets', '/goals', '/reminders'].includes(item.href);
+
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={onClose}
-                      className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-colors ${
+                      className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors ${
                         isActive
                           ? 'bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold'
                           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                      <span>{item.label}</span>
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                        <span>{item.label}</span>
+                      </div>
+                      {isUnderDevInProd ? (
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60">
+                          Soon
+                        </span>
+                      ) : item.badge ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
+                          {item.badge}
+                        </span>
+                      ) : null}
                     </Link>
                   );
                 })}

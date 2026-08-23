@@ -1,9 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PieChart, Plus, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import {
+  PieChart,
+  Plus,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldAlert,
+  Sliders,
+  TrendingDown,
+  BellRing,
+  WalletCards
+} from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { formatCurrency, getBudgetStatus } from '@/lib/calculations';
+import { APP_INFO } from '@/lib/constants';
+import UnderDevelopmentScreen from '@/components/common/UnderDevelopmentScreen';
 
 export default function BudgetsPage() {
   const { budgets, addBudget, user } = useData();
@@ -28,7 +40,34 @@ export default function BudgetsPage() {
     setMonthlyLimit('');
   };
 
-  return (
+  const budgetHighlights = [
+    {
+      title: 'Smart Category Caps',
+      description: 'Set custom monthly spending ceilings on Food, Dining, Fuel, Groceries, Shopping, & Subscriptions.',
+      icon: Sliders,
+      badge: 'Core'
+    },
+    {
+      title: 'Automated 80% & 100% Alerts',
+      description: 'Get early warning badges as you approach 80% of your budget, preventing month-end overdraft surprises.',
+      icon: BellRing,
+      badge: 'Smart'
+    },
+    {
+      title: 'Realtime Cash Flow Optimization',
+      description: 'Dynamic visual progress bars synchronize in realtime with all personal & circle split transactions.',
+      icon: TrendingDown,
+      badge: 'Realtime'
+    },
+    {
+      title: 'Flexible Rollover Budgets',
+      description: 'Unused budget limits can automatically roll over into the next calendar month or transfer to savings goals.',
+      icon: WalletCards,
+      badge: 'Upcoming'
+    }
+  ];
+
+  const mainBudgetContent = (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -180,4 +219,23 @@ export default function BudgetsPage() {
       )}
     </div>
   );
+
+  // If in Production, show UnderDevelopmentScreen with preview option
+  if (!APP_INFO.isBeta) {
+    return (
+      <UnderDevelopmentScreen
+        featureName="Monthly Category Budgets"
+        tagline="Enforce category spending caps, auto-calculate 80% & 100% breach notifications, and optimize monthly cash flow."
+        category="Financial Planning"
+        icon={PieChart}
+        highlights={budgetHighlights}
+        plannedRelease="v0.4.0 (Q3 2026)"
+        progressPercent={85}
+        childrenIfBypassed={mainBudgetContent}
+      />
+    );
+  }
+
+  return mainBudgetContent;
 }
+

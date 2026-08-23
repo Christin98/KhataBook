@@ -1,10 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Bell, Plus, Calendar, Check, AlertCircle, Sparkles } from 'lucide-react';
+import {
+  Bell,
+  Plus,
+  Calendar,
+  Check,
+  AlertCircle,
+  Sparkles,
+  Smartphone,
+  Repeat,
+  ShieldAlert,
+  CreditCard
+} from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { formatCurrency } from '@/lib/calculations';
 import { RecurrenceType } from '@/lib/types';
+import { APP_INFO } from '@/lib/constants';
+import UnderDevelopmentScreen from '@/components/common/UnderDevelopmentScreen';
 
 export default function RemindersPage() {
   const { reminders, addReminder, markReminderPaid, accounts, user } = useData();
@@ -36,7 +49,34 @@ export default function RemindersPage() {
     setAmount('');
   };
 
-  return (
+  const reminderHighlights = [
+    {
+      title: 'Smart Bill & Due Date Radar',
+      description: 'Centralizes credit card statement dates, payment dues, EMIs, house rent, and utility bills in one unified calendar.',
+      icon: Calendar,
+      badge: 'Core'
+    },
+    {
+      title: 'Browser & Mobile Push Notifications',
+      description: 'Firebase Cloud Messaging (FCM) push alerts sent 3 days, 1 day, and on the morning of bill due dates.',
+      icon: Smartphone,
+      badge: 'Cloud'
+    },
+    {
+      title: 'Recurring Cadence Automation',
+      description: 'Set monthly, weekly, quarterly, or annual recurrence so subscriptions roll over automatically upon payment.',
+      icon: Repeat,
+      badge: 'Automated'
+    },
+    {
+      title: 'Credit Card Minimum vs Full Due Tracking',
+      description: 'Integrates with card billing cycles to highlight interest-free grace periods and prevent late payment penalty fees.',
+      icon: CreditCard,
+      badge: 'Upcoming'
+    }
+  ];
+
+  const mainRemindersContent = (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -205,4 +245,23 @@ export default function RemindersPage() {
       )}
     </div>
   );
+
+  // If in Production, show UnderDevelopmentScreen with preview option
+  if (!APP_INFO.isBeta) {
+    return (
+      <UnderDevelopmentScreen
+        featureName="Bill & Payment Reminders"
+        tagline="Never miss a credit card payment due date, rent, recurring EMI, or streaming subscription renewal."
+        category="Bill Tracking"
+        icon={Bell}
+        highlights={reminderHighlights}
+        plannedRelease="v0.4.0 (Q3 2026)"
+        progressPercent={85}
+        childrenIfBypassed={mainRemindersContent}
+      />
+    );
+  }
+
+  return mainRemindersContent;
 }
+

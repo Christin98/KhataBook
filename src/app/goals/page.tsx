@@ -1,9 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Target, Plus, ShieldCheck, Plane, Bike, Laptop, Home, CheckCircle2 } from 'lucide-react';
+import {
+  Target,
+  Plus,
+  ShieldCheck,
+  Plane,
+  Bike,
+  Laptop,
+  Home,
+  CheckCircle2,
+  TrendingUp,
+  Coins,
+  Compass,
+  Milestone
+} from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { formatCurrency } from '@/lib/calculations';
+import { APP_INFO } from '@/lib/constants';
+import UnderDevelopmentScreen from '@/components/common/UnderDevelopmentScreen';
 
 export default function GoalsPage() {
   const { goals, addGoal, updateGoal, accounts, user } = useData();
@@ -36,7 +51,34 @@ export default function GoalsPage() {
     setCurrentAmount('');
   };
 
-  return (
+  const goalHighlights = [
+    {
+      title: 'Milestone Tracking',
+      description: 'Track emergency funds, vacations, gadgets, vehicles, and real estate savings with visual progress milestones.',
+      icon: Milestone,
+      badge: 'Core'
+    },
+    {
+      title: 'Auto-SIP & Daily Savings Calculator',
+      description: 'Calculates the exact daily or monthly contribution required to reach your target by your deadline.',
+      icon: TrendingUp,
+      badge: 'Smart'
+    },
+    {
+      title: 'Account Linking & Surplus Sweeps',
+      description: 'Link goals directly to dedicated savings accounts or automatically sweep leftover monthly cash flow.',
+      icon: Coins,
+      badge: 'Automated'
+    },
+    {
+      title: 'Inflation & ROI Projections',
+      description: 'Projects goal achievement dates with interest compounding from fixed deposits and index investments.',
+      icon: Compass,
+      badge: 'Upcoming'
+    }
+  ];
+
+  const mainGoalsContent = (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -187,4 +229,23 @@ export default function GoalsPage() {
       )}
     </div>
   );
+
+  // If in Production, show UnderDevelopmentScreen with preview option
+  if (!APP_INFO.isBeta) {
+    return (
+      <UnderDevelopmentScreen
+        featureName="Savings & Wealth Goals"
+        tagline="Target, plan, and accelerate your emergency fund, vacation savings, vehicle, laptop, and home goals."
+        category="Wealth Building"
+        icon={Target}
+        highlights={goalHighlights}
+        plannedRelease="v0.4.0 (Q3 2026)"
+        progressPercent={80}
+        childrenIfBypassed={mainGoalsContent}
+      />
+    );
+  }
+
+  return mainGoalsContent;
 }
+
