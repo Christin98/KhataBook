@@ -6,14 +6,20 @@ const constantsPath = path.join(__dirname, '..', 'src', 'lib', 'constants.ts');
 
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
-// Detect branch from Netlify environment (process.env.BRANCH) or custom env
-const netlifyBranch = (process.env.BRANCH || '').toLowerCase();
+// Detect branch from Netlify environment (process.env.BRANCH) or local git
+let localGitBranch = '';
+try {
+  localGitBranch = require('child_process').execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim().toLowerCase();
+} catch (e) {}
+
+const netlifyBranch = (process.env.BRANCH || localGitBranch || '').toLowerCase();
 const appEnv = (process.env.NEXT_PUBLIC_APP_ENV || '').toLowerCase();
 const isProdBranch =
   netlifyBranch === 'main' ||
   netlifyBranch === 'prod' ||
   netlifyBranch === 'production' ||
   appEnv === 'production';
+
 
 // Auto-increment build version unless --no-bump is passed
 const shouldBump = !process.argv.includes('--no-bump');
