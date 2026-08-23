@@ -33,8 +33,8 @@ export const FUN_CIRCLE_CATEGORIES = [
 
 export const SAMPLE_USER: UserProfile = {
   id: 'user_demo_123',
-  email: 'christin@example.com',
-  displayName: 'Christin',
+  email: 'demouser@example.com',
+  displayName: 'Demo User',
   photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
   currency: '₹',
   timezone: 'Asia/Kolkata',
