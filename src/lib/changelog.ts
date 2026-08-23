@@ -3,8 +3,8 @@ import { APP_INFO } from './constants';
 
 export const CHANGELOG_RELEASES: ChangelogRelease[] = [
   {
-    version: 'v0.3.4',
-    stage: 'Current Release',
+    version: APP_INFO.version,
+    stage: APP_INFO.stage,
     date: '2026-08-23',
     title: 'Smart Notification Center & Circle Auto-Ledger Sync',
     summary: 'A unified notification hub for bill dues & budget alarms, automatic bank debiting from Circle group expenses, and enhanced local developer tooling.',

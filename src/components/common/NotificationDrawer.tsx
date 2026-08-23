@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { useData } from '@/context/DataContext';
 import { AppNotification, NotificationType } from '@/lib/types';
 import { formatCurrency } from '@/lib/calculations';
+import { APP_INFO } from '@/lib/constants';
 
 interface NotificationDrawerProps {
   isOpen: boolean;
@@ -295,7 +296,7 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
               <Sparkles className="w-3.5 h-3.5" />
               <span>What's New in KhataKithab</span>
             </button>
-            <span className="text-[11px] font-mono">v0.3.4</span>
+            <span className="text-[11px] font-mono">{APP_INFO.version}</span>
           </div>
         </div>
       </div>
