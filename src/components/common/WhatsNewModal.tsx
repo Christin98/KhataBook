@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, X, Check, ArrowRight, ShieldCheck, Bell, Users, RefreshCw, Layers } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CHANGELOG_RELEASES, CURRENT_RELEASE } from '@/lib/changelog';
+import { CHANGELOG_RELEASES, CURRENT_RELEASE, getChangelogForCurrentEnv, PROD_CHANGELOG, BETA_CHANGELOG, DEV_CHANGELOG } from '@/lib/changelog';
 import { APP_INFO } from '@/lib/constants';
 
 interface WhatsNewModalProps {
@@ -13,6 +13,7 @@ interface WhatsNewModalProps {
 
 export default function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [selectedChannel, setSelectedChannel] = useState<'current' | 'prod' | 'beta' | 'dev'>('current');
   const [selectedVersion, setSelectedVersion] = useState<string>(CURRENT_RELEASE.version);
 
   useEffect(() => {
@@ -35,7 +36,15 @@ export default function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
 
   if (!isOpen) return null;
 
-  const currentChangelog = CHANGELOG_RELEASES.find((r) => r.version === selectedVersion) || CURRENT_RELEASE;
+  const getActiveReleases = () => {
+    if (selectedChannel === 'prod') return PROD_CHANGELOG;
+    if (selectedChannel === 'beta') return BETA_CHANGELOG;
+    if (selectedChannel === 'dev') return DEV_CHANGELOG;
+    return getChangelogForCurrentEnv().releases;
+  };
+
+  const activeReleases = getActiveReleases();
+  const currentChangelog = activeReleases.find((r) => r.version === selectedVersion) || activeReleases[0];
 
   const handleReload = () => {
     if (typeof window !== 'undefined') {
@@ -72,7 +81,11 @@ export default function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
                     Dev Build
                   </span>
-                ) : null}
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                    Production
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Released {currentChangelog.date} • {currentChangelog.stage}
@@ -89,37 +102,63 @@ export default function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
         </div>
 
         {/* Tab Selector */}
-        <div className="flex items-center gap-2 pt-4 pb-2">
-          <button
-            onClick={() => {
-              setActiveTab('current');
-              setSelectedVersion(CURRENT_RELEASE.version);
-            }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'current'
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Current Release ({CURRENT_RELEASE.version})
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'history'
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Version History
-          </button>
+        <div className="flex items-center justify-between gap-2 pt-4 pb-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setActiveTab('current');
+                setSelectedChannel('current');
+                setSelectedVersion(CURRENT_RELEASE.version);
+              }}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'current'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Current Release
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'history'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              Version History
+            </button>
+          </div>
+
+          {activeTab === 'history' && (
+            <div className="flex items-center gap-1 text-[11px] font-bold p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+              <button
+                onClick={() => setSelectedChannel('dev')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${selectedChannel === 'dev' ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-300 shadow-xs' : 'text-slate-400'}`}
+              >
+                Dev
+              </button>
+              <button
+                onClick={() => setSelectedChannel('beta')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${selectedChannel === 'beta' ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-300 shadow-xs' : 'text-slate-400'}`}
+              >
+                Beta
+              </button>
+              <button
+                onClick={() => setSelectedChannel('prod')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${selectedChannel === 'prod' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-300 shadow-xs' : 'text-slate-400'}`}
+              >
+                Prod
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto pr-1 py-2 space-y-6">
           {activeTab === 'history' && (
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {CHANGELOG_RELEASES.map((rel) => (
+              {activeReleases.map((rel) => (
                 <button
                   key={rel.version}
                   onClick={() => setSelectedVersion(rel.version)}

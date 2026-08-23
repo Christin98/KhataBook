@@ -1,0 +1,239 @@
+{
+  "prod": [
+    {
+      "version": "v0.3.1",
+      "stage": "Production Stable",
+      "date": "2026-08-23",
+      "title": "Circle Auto-Ledger & Client-Side AES-256 Encryption",
+      "summary": "Direct personal ledger integration for shared circle expenses and end-to-end client-side encryption.",
+      "isCurrent": true,
+      "highlights": [
+        "💳 Circle Auto-Ledger: Auto-deduct group expenses & settlements from personal accounts",
+        "🔐 AES-256-GCM Zero-Knowledge Financial Data Encryption",
+        "🔔 Smart In-App Notification Center & Bill Due Radar",
+        "⚡ Verified Node 22 runtime engine"
+      ],
+      "features": [
+        {
+          "title": "Circle Auto-Ledger Integration",
+          "description": "Select your debited/credited bank account when creating shared expenses or settlements.",
+          "tag": "Ledger"
+        },
+        {
+          "title": "AES-256-GCM Encryption",
+          "description": "Sensitive amounts and descriptions are encrypted before syncing to Firebase Firestore.",
+          "tag": "Security"
+        },
+        {
+          "title": "Bill Due Countdown & Alarms",
+          "description": "Smart Reminders with one-click \"Pay & Record in Ledger\" shortcut.",
+          "tag": "Reminders"
+        }
+      ],
+      "fixes": [
+        "Production deployment verified on main branch with Netlify CI/CD pipeline"
+      ]
+    },
+    {
+      "version": "v0.3.0",
+      "stage": "Production Stable",
+      "date": "2026-08-23",
+      "title": "Dual-Branch Architecture & Feature Previews",
+      "summary": "Branch-based release management with \"Coming Soon\" interactive feature showcases on production.",
+      "highlights": [
+        "🌿 Dual-Branch Pipeline: Isolated Beta Flight and Production release channels",
+        "🎨 Animated Feature Showcases for upcoming Budgets, Goals, and Reminders",
+        "🛡️ Global End-to-End Encryption status indicator"
+      ],
+      "features": [
+        {
+          "title": "Production Safety Isolation",
+          "description": "Experimental modules are showcased safely with waitlist & preview capabilities.",
+          "tag": "Architecture"
+        }
+      ]
+    },
+    {
+      "version": "v0.2.0",
+      "stage": "Production Stable",
+      "date": "2026-08-22",
+      "title": "Circles Split Engine & Firebase Cloud Sync",
+      "summary": "Shared expense splitting with simplified debt algorithms and Firebase Auth sync.",
+      "highlights": [
+        "👥 Shared Circles with custom split ratios",
+        "⚡ Simplified Debt Engine (\"Who Owes Whom\")",
+        "☁️ Realtime Cloud Synchronization across devices"
+      ],
+      "features": [
+        {
+          "title": "Group Expense Splitting",
+          "description": "Create shared expense circles with friends, roommates, and travel groups.",
+          "tag": "Circles"
+        }
+      ]
+    }
+  ],
+  "beta": [
+    {
+      "version": "v0.3.11-beta.5",
+      "stage": "Beta Flight",
+      "date": "2026-08-23",
+      "title": "feat: implement automated release pipeline for beta and production deployment workflows",
+      "summary": "Beta candidate build: feat: implement automated release pipeline for beta and production deployment workflows",
+      "isCurrent": true,
+      "highlights": [
+        "🚀 Flight release v0.3.11-beta.5",
+        "⚡ Verified local compilation & test suites",
+        "🔒 Private beta flight access gated"
+      ],
+      "features": [
+        {
+          "title": "feat: implement automated release pipeline for beta and production deployment workflows",
+          "description": "Newest changes and fixes ready for flight candidate testing.",
+          "tag": "Beta Flight"
+        }
+      ],
+      "fixes": [
+        "Automated pre-flight verification passed"
+      ]
+    },
+    {
+      "version": "v0.3.11-beta.2",
+      "stage": "Beta Flight",
+      "date": "2026-08-23",
+      "title": "Beta Flight: In-App Notification Center & Smart Reminders",
+      "summary": "Testing in-app notification drawer, web push alarms, and auto-debit smart reminders.",
+      "isCurrent": false,
+      "highlights": [
+        "🔔 Live Notification Drawer with category filters and unread badges",
+        "⏰ Smart Reminder \"Pay & Debit Account\" interactive modal",
+        "⚡ Browser Web Push alarm permissions testing",
+        "✨ Release announcements & \"What's New\" changelog dialog"
+      ],
+      "features": [
+        {
+          "title": "Push Alarm & Notification Center",
+          "description": "Real-time calculation of bill dues (3 days, today, overdue) and budget breach warnings.",
+          "tag": "Beta Flight"
+        },
+        {
+          "title": "Circle Auto-Ledger Verification",
+          "description": "Validating real-time personal transaction logging when settling circle balances.",
+          "tag": "Testing"
+        }
+      ],
+      "fixes": [
+        "Fixed browser notification permission handler race condition",
+        "Dynamic version binding in changelog tab selectors"
+      ]
+    },
+    {
+      "version": "v0.3.1-beta.2",
+      "stage": "Beta Flight",
+      "date": "2026-08-23",
+      "title": "Beta Gate & Node 22 Secrets Scanner Optimization",
+      "summary": "Flight access gate verification and Netlify build scanner fixes.",
+      "highlights": [
+        "🔒 Passcode-gated preview for invitees on beta deployment",
+        "🚀 Upgraded Node.js serverless build runtime to Node 22"
+      ],
+      "features": [
+        {
+          "title": "Beta Access Gate",
+          "description": "Invite passcode authentication with developer Google login bypass.",
+          "tag": "Security"
+        }
+      ],
+      "isCurrent": false
+    }
+  ],
+  "dev": [
+    {
+      "version": "v0.3.11-beta.6",
+      "stage": "Local Dev",
+      "date": "2026-08-23",
+      "title": "Local Dev Build v0.3.11-beta.6",
+      "summary": "Automated build record created on 2026-08-23 at 2026.08.23.2237.",
+      "isCurrent": true,
+      "highlights": [
+        "Build v0.3.11-beta.6 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.3.11-beta.4",
+      "stage": "Local Dev",
+      "date": "2026-08-23",
+      "title": "Local Dev Build v0.3.11-beta.4",
+      "summary": "Automated build record created on 2026-08-23 at 2026.08.23.2230.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.3.11-beta.4 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.3.11-beta.3",
+      "stage": "Local Dev",
+      "date": "2026-08-23",
+      "title": "Local Dev Build v0.3.11-beta.3",
+      "summary": "Automated build record created on 2026-08-23 at 2026.08.23.2225.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.3.11-beta.3 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.3.11-beta.2",
+      "stage": "Local Development",
+      "date": "2026-08-23",
+      "title": "Local Dev Workspace & Feature Prototyping",
+      "summary": "Active development build with unlocked modules, debug tools, and local storage fallback.",
+      "isCurrent": false,
+      "highlights": [
+        "🛠️ Full Module Access: Budgets, Goals, Reminders 100% unlocked for development",
+        "🟣 Purple DEV badge indicator across Sidebar, Header, MobileNav, and Footer",
+        "🧪 Alarm & Web Push test suite in Reminders",
+        "🔄 Clean ledger reset and developer demo data seeding"
+      ],
+      "features": [
+        {
+          "title": "Developer Mode Harness",
+          "description": "Direct access to experimental features without production or beta gating.",
+          "tag": "Local Dev"
+        },
+        {
+          "title": "Local Dev Versioning",
+          "description": "Independent build timestamping and patch tracking.",
+          "tag": "Tooling"
+        }
+      ],
+      "fixes": [
+        "Hot module reloading optimization in Next.js 15 App Router",
+        "Safe Web Crypto API key derivation fallbacks"
+      ]
+    }
+  ]
+}

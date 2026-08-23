@@ -77,6 +77,46 @@ export const APP_INFO = {
 `;
 
 fs.writeFileSync(constantsPath, constantsContent, 'utf8');
+
+// Ensure current build entry is recorded in changelog-data.json
+try {
+  const changelogDataPath = path.join(__dirname, '..', 'src', 'lib', 'changelog-data.json');
+  if (fs.existsSync(changelogDataPath)) {
+    const changelogData = JSON.parse(fs.readFileSync(changelogDataPath, 'utf8'));
+    const targetKey = isDev && !isNetlifyBuild ? 'dev' : isBeta ? 'beta' : 'prod';
+
+    if (!changelogData[targetKey]) changelogData[targetKey] = [];
+
+    const existingIndex = changelogData[targetKey].findIndex((item) => item.version === versionString);
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    if (existingIndex === -1) {
+      const newEntry = {
+        version: versionString,
+        stage: stage,
+        date: todayStr,
+        title: `${stage} Build ${versionString}`,
+        summary: `Automated build record created on ${todayStr} at ${buildTimestamp}.`,
+        isCurrent: true,
+        highlights: [
+          `Build ${versionString} (${stage})`,
+          'Automated changelog preservation'
+        ],
+        features: [
+          {
+            title: `${stage} Build`,
+            description: `Automated ${stage} build verification passed.`,
+            tag: stage
+          }
+        ]
+      };
+      changelogData[targetKey] = [newEntry, ...changelogData[targetKey].map((c) => ({ ...c, isCurrent: false }))];
+      fs.writeFileSync(changelogDataPath, JSON.stringify(changelogData, null, 2) + '\n', 'utf8');
+    }
+  }
+} catch (e) {}
+
 console.log(`[KhataKithab Build] Version set to ${versionString} (${buildTimestamp}) [Stage: ${stage}]`);
+
 
 

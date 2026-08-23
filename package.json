@@ -1,6 +1,6 @@
 {
   "name": "khatakithab",
-  "version": "0.3.11-beta.1",
+  "version": "0.3.11-beta.6",
   "private": true,
   "scripts": {
     "predev": "node scripts/update-version.js",
@@ -9,6 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "deploy:beta": "node scripts/release.js --beta",
+    "deploy:prod": "node scripts/release.js --prod",
     "bump:patch": "node scripts/bump-version.js patch",
     "bump:minor": "node scripts/bump-version.js minor",
     "bump:major": "node scripts/bump-version.js major"
