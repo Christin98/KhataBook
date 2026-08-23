@@ -1,6 +1,6 @@
 {
   "name": "khatakithab",
-  "version": "0.3.0-beta.3",
+  "version": "0.3.0-beta.4",
   "private": true,
   "scripts": {
     "predev": "node scripts/update-version.js",
