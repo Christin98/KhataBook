@@ -1,5 +1,16 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  Auth,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from 'firebase/auth';
 import {
   getFirestore,
   Firestore,
@@ -51,5 +62,21 @@ if (typeof window !== 'undefined') {
   storage = getStorage(app);
 }
 
+
+
 export const googleProvider = new GoogleAuthProvider();
-export { app, auth, db, storage };
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+export {
+  app,
+  auth,
+  db,
+  storage,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  onAuthStateChanged
+};
+export type { FirebaseUser };

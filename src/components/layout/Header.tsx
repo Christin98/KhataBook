@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Bell, Plus, Sparkles, Moon, Sun } from 'lucide-react';
+import { Search, Bell, Plus, Sparkles, User as UserIcon, LogIn, LogOut, Cloud, HardDrive } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
 interface HeaderProps {
@@ -9,7 +9,15 @@ interface HeaderProps {
 }
 
 export default function Header({ onOpenMobileNav }: HeaderProps) {
-  const { setIsQuickAddOpen, setIsSearchModalOpen, user, isDemoMode } = useData();
+  const {
+    setIsQuickAddOpen,
+    setIsSearchModalOpen,
+    user,
+    firebaseUser,
+    setIsAuthModalOpen,
+    logout,
+    isDemoMode
+  } = useData();
 
   return (
     <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 px-4 lg:px-8 flex items-center justify-between">
@@ -40,15 +48,57 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* Demo Mode Badge */}
-        {isDemoMode && (
-          <span className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
-            <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-            <span>Demo Mode</span>
+        {/* Connection Mode Badge */}
+        {firebaseUser ? (
+          <span className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            <Cloud className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Firebase Connected</span>
+          </span>
+        ) : (
+          <span className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <HardDrive className="w-3.5 h-3.5 text-amber-600" />
+            <span>Local Storage Mode</span>
           </span>
         )}
 
-        {/* Quick Add Button (Mobile & Desktop) */}
+        {/* Auth Button or User Profile */}
+        {firebaseUser ? (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              {firebaseUser.photoURL ? (
+                <img
+                  src={firebaseUser.photoURL}
+                  alt={user.displayName}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center text-xs">
+                  {user.displayName.charAt(0)}
+                </div>
+              )}
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 hidden sm:inline truncate max-w-[100px]">
+                {user.displayName}
+              </span>
+              <button
+                onClick={logout}
+                title="Sign Out"
+                className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold shadow-sm transition-all active:scale-95"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In</span>
+          </button>
+        )}
+
+        {/* Quick Add Button */}
         <button
           onClick={() => setIsQuickAddOpen(true)}
           className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-95"

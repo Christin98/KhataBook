@@ -1,3 +1,5 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/1d1a89ba-5b97-4775-b087-ce274b19a5a1/deploy-status)](https://app.netlify.com/projects/khatakithab/deploys)
+
 # 💰 KhataKithab — Production Personal Finance & Expense Splitting App
 
 **KhataKithab** is a full-stack, production-ready personal finance and shared expense splitting web application built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Firebase**.

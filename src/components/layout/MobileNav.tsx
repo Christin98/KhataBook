@@ -11,7 +11,8 @@ import {
   MoreHorizontal,
   X,
   Plus,
-  Wallet
+  Wallet,
+  LogOut
 } from 'lucide-react';
 import { NAV_ITEMS } from './Sidebar';
 import { useData } from '@/context/DataContext';
@@ -23,7 +24,7 @@ interface MobileNavProps {
 
 export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const pathname = usePathname();
-  const { setIsQuickAddOpen, user } = useData();
+  const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout } = useData();
 
   const primaryMobileNav = [
     { label: 'Home', href: '/', icon: LayoutDashboard },
@@ -78,7 +79,49 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
               </nav>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {firebaseUser?.photoURL ? (
+                    <img
+                      src={firebaseUser.photoURL}
+                      alt={user.displayName}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center text-xs">
+                      {user.displayName.charAt(0)}
+                    </div>
+                  )}
+                  <div className="text-xs">
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{user.displayName}</p>
+                    <p className="text-[10px] text-slate-400 truncate w-24">{user.email}</p>
+                  </div>
+                </div>
+
+                {firebaseUser ? (
+                  <button
+                    onClick={() => {
+                      logout();
+                      onClose();
+                    }}
+                    className="p-2 rounded-lg text-rose-600 bg-rose-50 dark:bg-rose-950/40 text-xs font-bold"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      setIsAuthModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-sm"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={() => {
                   onClose();

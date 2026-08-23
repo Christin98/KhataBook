@@ -12,7 +12,7 @@ import {
   Users
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
-import { formatCurrency } from '@/lib/calculations';
+import { formatCurrency, calculateMonthlyCashflowTrend } from '@/lib/calculations';
 import {
   ResponsiveContainer,
   PieChart,
@@ -46,13 +46,8 @@ export default function ReportsPage() {
 
   const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#ec4899', '#6366f1'];
 
-  // Income vs Expense comparative data
-  const monthlyCashflow = [
-    { month: 'May', Income: 135000, Expense: 82000, Savings: 53000 },
-    { month: 'Jun', Income: 140000, Expense: 89000, Savings: 51000 },
-    { month: 'Jul', Income: 145000, Expense: 74000, Savings: 71000 },
-    { month: 'Aug', Income: 157500, Expense: 41549, Savings: 115951 }
-  ];
+  // Income vs Expense comparative data calculated dynamically from transactions
+  const monthlyCashflow = calculateMonthlyCashflowTrend(transactions, 4);
 
   const handleExportCSV = () => {
     const headers = 'ID,Type,Amount,Category,Description,Date,Account\n';

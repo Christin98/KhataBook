@@ -75,6 +75,35 @@ export function calculateMonthlySummary(transactions: Transaction[], monthStr: s
 }
 
 /**
+ * Calculate dynamic monthly cashflow trend for chart rendering
+ */
+export function calculateMonthlyCashflowTrend(transactions: Transaction[], monthCount: number = 4) {
+  const result: { name: string; month: string; monthKey: string; Income: number; Expense: number; Savings: number }[] = [];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const now = new Date();
+  for (let i = monthCount - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const year = d.getFullYear();
+    const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+    const monthKey = `${year}-${monthNum}`;
+    const monthName = monthNames[d.getMonth()];
+
+    const summary = calculateMonthlySummary(transactions, monthKey);
+    result.push({
+      name: monthName,
+      month: monthName,
+      monthKey,
+      Income: summary.income,
+      Expense: summary.expenses,
+      Savings: summary.savings
+    });
+  }
+
+  return result;
+}
+
+/**
  * Calculate total Credit Card Outstanding & Available Credit
  */
 export function calculateCreditCardSummary(cards: CreditCard[]) {

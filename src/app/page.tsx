@@ -23,6 +23,7 @@ import {
   formatCurrency,
   calculateTotalBalance,
   calculateMonthlySummary,
+  calculateMonthlyCashflowTrend,
   calculateCreditCardSummary,
   calculateLoanSummary,
   calculateUserCircleTotals,
@@ -53,7 +54,7 @@ export default function DashboardPage() {
     setIsQuickAddOpen
   } = useData();
 
-  const currentMonthStr = '2026-08';
+  const currentMonthStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
   const totalBalance = calculateTotalBalance(accounts);
   const { income, expenses, savings, savingsRate } = calculateMonthlySummary(transactions, currentMonthStr);
   const { totalOutstanding: ccOutstanding } = calculateCreditCardSummary(creditCards);
@@ -69,13 +70,8 @@ export default function DashboardPage() {
     reminders.length
   );
 
-  // Chart data for monthly comparison
-  const chartData = [
-    { name: 'May', Income: 135000, Expense: 82000 },
-    { name: 'Jun', Income: 140000, Expense: 89000 },
-    { name: 'Jul', Income: 145000, Expense: 74000 },
-    { name: 'Aug', Income: income, Expense: expenses }
-  ];
+  // Dynamic Chart data calculated from actual transactions
+  const chartData = calculateMonthlyCashflowTrend(transactions, 4);
 
   return (
     <div className="space-y-8 animate-fadeIn">

@@ -17,7 +17,8 @@ import {
   Settings,
   Wallet,
   Sparkles,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { APP_INFO } from '@/lib/constants';
@@ -38,7 +39,7 @@ export const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { setIsQuickAddOpen, user } = useData();
+  const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout } = useData();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-screen sticky top-0 z-30 select-none">
@@ -109,19 +110,45 @@ export default function Sidebar() {
       <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center text-sm border border-brand-200 dark:border-brand-800">
-              {user.displayName.charAt(0)}
-            </div>
+            {firebaseUser?.photoURL ? (
+              <img
+                src={firebaseUser.photoURL}
+                alt={user.displayName}
+                className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center text-sm border border-brand-200 dark:border-brand-800">
+                {user.displayName.charAt(0)}
+              </div>
+            )}
             <div className="text-xs">
               <p className="font-semibold text-slate-800 dark:text-slate-200 leading-snug">{user.displayName}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[11px] truncate w-28">{user.email}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px] truncate w-24">{user.email}</p>
             </div>
           </div>
-          <span className="w-2 h-2 rounded-full bg-emerald-500" title="Online & Offline Sync Ready" />
+          {firebaseUser ? (
+            <button
+              onClick={logout}
+              title="Sign Out"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="px-2 py-1 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-bold shadow-sm"
+            >
+              Sign In
+            </button>
+          )}
         </div>
 
         <div className="pt-2 border-t border-slate-100/60 dark:border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
-          <span>{APP_INFO.name}</span>
+          <span className="flex items-center gap-1">
+            <span className={`w-1.5 h-1.5 rounded-full ${firebaseUser ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            {firebaseUser ? 'Firebase Cloud' : 'Local Storage'}
+          </span>
           <span className="font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300">
             {APP_INFO.version}
           </span>
