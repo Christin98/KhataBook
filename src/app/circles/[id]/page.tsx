@@ -25,6 +25,7 @@ import confetti from 'canvas-confetti';
 import { useData } from '@/context/DataContext';
 import { formatCurrency, calculateCircleNetBalances } from '@/lib/calculations';
 import { FUN_CIRCLE_CATEGORIES } from '@/lib/sampleData';
+import { APP_INFO } from '@/lib/constants';
 
 export default function CircleDetailPage() {
   const params = useParams();
@@ -39,7 +40,8 @@ export default function CircleDetailPage() {
     addSettlement,
     accounts,
     addTransaction,
-    user
+    user,
+    isDevMode
   } = useData();
 
   const circle = circles.find((c) => c.id === circleId);
@@ -283,11 +285,22 @@ export default function CircleDetailPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <button
+            disabled={!APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode}
             onClick={handleCopyInvite}
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-2 border border-white/20 transition-all active:scale-95"
+            className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs flex items-center gap-2 border transition-all ${
+              !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode
+                ? 'bg-white/5 border-white/10 opacity-75 cursor-not-allowed text-white/70'
+                : 'bg-white/10 hover:bg-white/20 border-white/20 active:scale-95'
+            }`}
+            title={!APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode ? 'Invite links coming in v0.5.0' : 'Copy circle invite link'}
           >
             {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
             <span>{copiedLink ? 'Link Copied!' : 'Invite Friends'}</span>
+            {!APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                Soon
+              </span>
+            )}
           </button>
           <button
             onClick={() => setIsAddExpenseOpen(true)}
