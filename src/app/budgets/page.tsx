@@ -231,8 +231,8 @@ export default function BudgetsPage() {
         category="Financial Planning"
         icon={PieChart}
         highlights={budgetHighlights}
-        plannedRelease="v0.4.0 (Q3 2026)"
-        progressPercent={85}
+        plannedRelease="v0.4.5 (Target: Next Flight Drop)"
+        progressPercent={90}
         childrenIfBypassed={mainBudgetContent}
       />
     );

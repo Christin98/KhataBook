@@ -100,12 +100,65 @@
   ],
   "beta": [
     {
+      "version": "v0.4.0-beta.3",
+      "stage": "Beta Flight",
+      "date": "2026-08-24",
+      "title": "KhataKithab v0.4.0 - Reminders Unlocked & Flight Radar",
+      "summary": "Beta candidate build: KhataKithab v0.4.0 - Reminders Unlocked & Flight Radar",
+      "isCurrent": true,
+      "highlights": [
+        "🚀 Flight release v0.4.0-beta.3",
+        "⚡ Verified local compilation & test suites",
+        "🔒 Private beta flight access gated"
+      ],
+      "features": [
+        {
+          "title": "KhataKithab v0.4.0 - Reminders Unlocked & Flight Radar",
+          "description": "Newest changes and fixes ready for flight candidate testing.",
+          "tag": "Beta Flight"
+        }
+      ],
+      "fixes": [
+        "Automated pre-flight verification passed"
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.1",
+      "stage": "Beta Flight",
+      "date": "2026-08-24",
+      "title": "KhataKithab v0.4.0 Flight: Reminders Unlocked & Flight Radar",
+      "summary": "Official unlock of Smart Reminders with auto-account debit, updated Budgets & Goals roadmap targets, and release automation engine.",
+      "isCurrent": false,
+      "highlights": [
+        "⏰ Smart Reminders Unlocked: Full auto-debit ledger payments & due countdown tags",
+        "🎯 Budgets & Goals Flight Tracker (Target Release: v0.4.5)",
+        "🚀 Automated Release Pipelines (deploy:beta & deploy:prod)",
+        "💾 Persistent build changelog preservation across all environments"
+      ],
+      "features": [
+        {
+          "title": "Smart Reminders Live",
+          "description": "Full access to bill due alarms, recurring reminders, and auto-debit payments.",
+          "tag": "Beta Flight"
+        },
+        {
+          "title": "Budgets & Goals Roadmap",
+          "description": "Updated flight progress metrics (85-90% Ready) and target flight release notes.",
+          "tag": "Roadmap"
+        }
+      ],
+      "fixes": [
+        "Unlocked Reminders in navigation sidebar and mobile drawer",
+        "Fixed version tag synchronization across all release channels"
+      ]
+    },
+    {
       "version": "v0.3.11-beta.5",
       "stage": "Beta Flight",
       "date": "2026-08-23",
       "title": "feat: implement automated release pipeline for beta and production deployment workflows",
       "summary": "Beta candidate build: feat: implement automated release pipeline for beta and production deployment workflows",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "🚀 Flight release v0.3.11-beta.5",
         "⚡ Verified local compilation & test suites",
@@ -174,12 +227,50 @@
   ],
   "dev": [
     {
+      "version": "v0.4.0-beta.4",
+      "stage": "Local Dev",
+      "date": "2026-08-24",
+      "title": "Local Dev Build v0.4.0-beta.4",
+      "summary": "Automated build record created on 2026-08-24 at 2026.08.24.0932.",
+      "isCurrent": true,
+      "highlights": [
+        "Build v0.4.0-beta.4 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.2",
+      "stage": "Local Dev",
+      "date": "2026-08-23",
+      "title": "Local Dev Build v0.4.0-beta.2",
+      "summary": "Automated build record created on 2026-08-23 at 2026.08.23.2255.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.4.0-beta.2 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
       "version": "v0.3.11-beta.1",
       "stage": "Local Dev",
       "date": "2026-08-23",
       "title": "Local Dev Build v0.3.11-beta.1",
       "summary": "Automated build record created on 2026-08-23 at 2026.08.23.2239.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "Build v0.3.11-beta.1 (Local Dev)",
         "Automated changelog preservation"

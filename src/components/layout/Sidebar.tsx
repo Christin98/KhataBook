@@ -85,7 +85,7 @@ export default function Sidebar() {
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
-          const isUnderDevInProd = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode && ['/budgets', '/goals', '/reminders'].includes(item.href);
+          const isUnderDevInProd = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode && ['/budgets', '/goals'].includes(item.href);
 
           return (
             <Link

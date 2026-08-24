@@ -241,8 +241,8 @@ export default function GoalsPage() {
         category="Wealth Building"
         icon={Target}
         highlights={goalHighlights}
-        plannedRelease="v0.4.0 (Q3 2026)"
-        progressPercent={80}
+        plannedRelease="v0.4.5 (Target: Next Flight Drop)"
+        progressPercent={85}
         childrenIfBypassed={mainGoalsContent}
       />
     );
