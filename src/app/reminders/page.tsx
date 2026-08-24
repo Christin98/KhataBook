@@ -23,7 +23,6 @@ import { useData } from '@/context/DataContext';
 import { formatCurrency } from '@/lib/calculations';
 import { RecurrenceType, Reminder } from '@/lib/types';
 import { APP_INFO } from '@/lib/constants';
-import UnderDevelopmentScreen from '@/components/common/UnderDevelopmentScreen';
 
 export default function RemindersPage() {
   const {
@@ -475,24 +474,6 @@ export default function RemindersPage() {
       )}
     </div>
   );
-
-  // Only lock if in pure production (unlocked in Dev mode, Beta Flight, and for Developers)
-  const isLockedInProduction = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode;
-
-  if (isLockedInProduction) {
-    return (
-      <UnderDevelopmentScreen
-        featureName="Bill & Payment Reminders"
-        tagline="Never miss a credit card payment due date, rent, recurring EMI, or streaming subscription renewal."
-        category="Bill Tracking"
-        icon={Bell}
-        highlights={reminderHighlights}
-        plannedRelease="v0.4.0 (Q3 2026)"
-        progressPercent={85}
-        childrenIfBypassed={mainRemindersContent}
-      />
-    );
-  }
 
   return mainRemindersContent;
 }
