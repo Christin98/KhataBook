@@ -1,12 +1,35 @@
 {
   "prod": [
     {
+      "version": "v0.4.0",
+      "stage": "Production Stable",
+      "date": "2026-08-24",
+      "title": "KhataKithab v0.4.0 Official Release",
+      "summary": "Production release: KhataKithab v0.4.0 Official Release",
+      "isCurrent": true,
+      "highlights": [
+        "🌟 Official Release v0.4.0",
+        "⚡ Complete production security & encryption compliance",
+        "💎 High-performance release bundle on Netlify CDN"
+      ],
+      "features": [
+        {
+          "title": "KhataKithab v0.4.0 Official Release",
+          "description": "Stable feature enhancements promoted after successful beta testing.",
+          "tag": "Stable"
+        }
+      ],
+      "fixes": [
+        "Full test harness and flight testing verified"
+      ]
+    },
+    {
       "version": "v0.3.11",
       "stage": "Production Stable",
       "date": "2026-08-23",
       "title": "feat: implement automated release pipeline for beta and production deployment workflows",
       "summary": "Production release: feat: implement automated release pipeline for beta and production deployment workflows",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "🌟 Official Release v0.3.11",
         "⚡ Complete production security & encryption compliance",
@@ -227,12 +250,31 @@
   ],
   "dev": [
     {
+      "version": "v0.4.0-beta.1",
+      "stage": "Local Dev",
+      "date": "2026-08-24",
+      "title": "Local Dev Build v0.4.0-beta.1",
+      "summary": "Automated build record created on 2026-08-24 at 2026.08.24.1031.",
+      "isCurrent": true,
+      "highlights": [
+        "Build v0.4.0-beta.1 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
       "version": "v0.4.0-beta.4",
       "stage": "Local Dev",
       "date": "2026-08-24",
       "title": "Local Dev Build v0.4.0-beta.4",
       "summary": "Automated build record created on 2026-08-24 at 2026.08.24.0932.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "Build v0.4.0-beta.4 (Local Dev)",
         "Automated changelog preservation"
