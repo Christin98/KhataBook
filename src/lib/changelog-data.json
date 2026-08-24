@@ -4,9 +4,32 @@
       "version": "v0.4.0",
       "stage": "Production Stable",
       "date": "2026-08-24",
+      "title": "KhataKithab v0.4.0 - Reminders Unlocked & Smart Alarms",
+      "summary": "Production release: KhataKithab v0.4.0 - Reminders Unlocked & Smart Alarms",
+      "isCurrent": true,
+      "highlights": [
+        "🌟 Official Release v0.4.0",
+        "⚡ Complete production security & encryption compliance",
+        "💎 High-performance release bundle on Netlify CDN"
+      ],
+      "features": [
+        {
+          "title": "KhataKithab v0.4.0 - Reminders Unlocked & Smart Alarms",
+          "description": "Stable feature enhancements promoted after successful beta testing.",
+          "tag": "Stable"
+        }
+      ],
+      "fixes": [
+        "Full test harness and flight testing verified"
+      ]
+    },
+    {
+      "version": "v0.4.0",
+      "stage": "Production Stable",
+      "date": "2026-08-24",
       "title": "KhataKithab v0.4.0 Official Release",
       "summary": "Production release: KhataKithab v0.4.0 Official Release",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "🌟 Official Release v0.4.0",
         "⚡ Complete production security & encryption compliance",
