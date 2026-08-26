@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, LogIn, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { X, Mail, Lock, User, LogIn, AlertCircle, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
 interface AuthModalProps {
@@ -74,39 +74,44 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+      {/* Frosted Scrim */}
+      <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md" onClick={onClose} />
+
       <div
-        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden relative"
+        className="relative w-full max-w-md glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl shadow-2xl border border-white/40 dark:border-white/10 overflow-hidden z-10 space-y-5 p-6 sm:p-7"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header decoration */}
-        <div className="bg-gradient-to-r from-brand-600 to-brand-500 p-6 text-white relative">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200/50 dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 border border-white/20">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white leading-snug">Welcome to KhataKithab</h2>
+              <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold">Realtime Cloud Sync</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-3">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <h2 className="text-xl font-bold">Welcome to KhataKithab</h2>
-          <p className="text-xs text-brand-100 mt-1">
-            Sign in to sync your finance ledger in real-time across devices.
-          </p>
         </div>
 
         {/* Form Container */}
-        <div className="p-6 space-y-5">
+        <div className="space-y-4">
           {/* Google Sign In Button */}
           <button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-sm shadow-sm transition-all active:scale-[0.99] disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl glass-subtle hover:bg-white/80 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200 font-bold text-xs shadow-sm transition-all active:scale-[0.99] disabled:opacity-60 border border-slate-200 dark:border-white/10 cursor-pointer"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-4.5 h-4.5" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -129,15 +134,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           {/* Divider */}
           <div className="relative flex items-center justify-center">
-            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-            <span className="bg-white dark:bg-slate-900 px-3 text-xs text-slate-400 font-medium shrink-0">
-              or use email
+            <div className="border-t border-slate-200/50 dark:border-white/10 w-full" />
+            <span className="glass-pill px-3 py-0.5 rounded-full text-[10px] text-slate-400 font-bold uppercase tracking-wider shrink-0">
+              or with email
             </span>
           </div>
 
           {/* Error Banner */}
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -147,46 +152,46 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {mode === 'signup' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <User className="w-4 h-4 text-brand-500 absolute left-3.5 top-3" />
                   <input
                     type="text"
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    placeholder="Your Name"
+                    className="w-full pl-10 pr-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <Mail className="w-4 h-4 text-brand-500 absolute left-3.5 top-3" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full pl-10 pr-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <Lock className="w-4 h-4 text-brand-500 absolute left-3.5 top-3" />
                 <input
                   type="password"
                   required
@@ -194,7 +199,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full pl-10 pr-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
             </div>
@@ -202,14 +207,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-semibold text-sm shadow-md shadow-brand-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 active:scale-[0.99] text-white font-black text-xs shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-60 border border-white/20 cursor-pointer"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin text-white" />
               ) : (
                 <>
                   <LogIn className="w-4 h-4" />
-                  <span>{mode === 'signin' ? 'Sign In' : 'Create Account'}</span>
+                  <span>{mode === 'signin' ? 'Sign In to Ledger' : 'Create Account'}</span>
                 </>
               )}
             </button>
@@ -217,7 +222,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           {/* Toggle mode */}
           <div className="text-center pt-2">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
               <button
                 type="button"
@@ -225,7 +230,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   setMode(mode === 'signin' ? 'signup' : 'signin');
                   setError(null);
                 }}
-                className="ml-1.5 text-brand-600 dark:text-brand-400 font-bold hover:underline"
+                className="ml-1.5 text-brand-600 dark:text-brand-400 font-bold hover:underline cursor-pointer"
               >
                 {mode === 'signin' ? 'Sign Up' : 'Sign In'}
               </button>

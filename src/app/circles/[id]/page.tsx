@@ -307,7 +307,7 @@ export default function CircleDetailPage() {
             className="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-lg shadow-brand-500/30 flex items-center gap-2 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add Circle Expense</span>
+            <span>Add Circle Expense</span>
           </button>
         </div>
       </div>

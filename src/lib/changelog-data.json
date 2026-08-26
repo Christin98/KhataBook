@@ -296,12 +296,848 @@
   ],
   "dev": [
     {
+      "version": "v0.5.2-beta.1",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.2-beta.1",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2352.",
+      "isCurrent": true,
+      "highlights": [
+        "Build v0.5.2-beta.1 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.15",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.15",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2351.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.15 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.14",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.14",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2350.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.14 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.13",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.13",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2345.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.13 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.12",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.12",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2344.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.12 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.11",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.11",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2344.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.11 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.10",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.10",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2343.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.10 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.9",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.9",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2337.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.9 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.8",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.8",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2335.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.8 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.7",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.7",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2333.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.7 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.6",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.6",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2330.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.6 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.5",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.5",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2330.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.5 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.4",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.4",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2329.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.4 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.3",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.3",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2324.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.3 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.2",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.2",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2323.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.2 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.1-beta.1",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.1-beta.1",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2316.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.1-beta.1 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.22",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.22",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2315.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.22 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.21",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.21",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2314.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.21 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.20",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.20",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2314.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.20 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.19",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.19",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2310.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.19 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.18",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.18",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2309.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.18 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.17",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.17",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2306.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.17 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.16",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.16",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2304.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.16 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.15",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.15",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2303.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.15 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.14",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.14",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2302.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.14 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.13",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.13",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2301.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.13 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.12",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.12",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2259.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.12 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.11",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.11",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2258.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.11 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.10",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.10",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2255.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.10 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.9",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.9",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2255.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.9 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.8",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.8",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2246.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.8 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.7",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.7",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2243.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.7 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.6",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.6",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2059.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.6 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.5",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.5",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2040.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.5 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.4",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.4",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2024.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.4 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.3",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.3",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2022.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.3 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.2",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.2",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2014.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.2 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.0-beta.1",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.5.0-beta.1",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.1550.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.0-beta.1 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.9",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.4.0-beta.9",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.1545.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.4.0-beta.9 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.8",
+      "stage": "Local Dev",
+      "date": "2026-08-26",
+      "title": "Local Dev Build v0.4.0-beta.8",
+      "summary": "Automated build record created on 2026-08-26 at 2026.08.26.1405.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.4.0-beta.8 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.7",
+      "stage": "Local Dev",
+      "date": "2026-08-25",
+      "title": "Local Dev Build v0.4.0-beta.7",
+      "summary": "Automated build record created on 2026-08-25 at 2026.08.25.2330.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.4.0-beta.7 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.6",
+      "stage": "Local Dev",
+      "date": "2026-08-25",
+      "title": "Local Dev Build v0.4.0-beta.6",
+      "summary": "Automated build record created on 2026-08-25 at 2026.08.25.2329.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.4.0-beta.6 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.5",
+      "stage": "Local Dev",
+      "date": "2026-08-25",
+      "title": "Local Dev Build v0.4.0-beta.5",
+      "summary": "Automated build record created on 2026-08-25 at 2026.08.25.2328.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.4.0-beta.5 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.4.0-beta.3",
+      "stage": "Local Dev",
+      "date": "2026-08-25",
+      "title": "Local Dev Build v0.4.0-beta.3",
+      "summary": "Automated build record created on 2026-08-25 at 2026.08.25.2124.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.4.0-beta.3 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
       "version": "v0.4.0-beta.1",
       "stage": "Local Dev",
       "date": "2026-08-24",
       "title": "Local Dev Build v0.4.0-beta.1",
       "summary": "Automated build record created on 2026-08-24 at 2026.08.24.1031.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "Build v0.4.0-beta.1 (Local Dev)",
         "Automated changelog preservation"

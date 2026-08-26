@@ -2,6 +2,8 @@ import {
   Account,
   Transaction,
   CreditCard,
+  EMI,
+  EMIInstallment,
   Loan,
   Circle,
   CircleExpense,
@@ -104,15 +106,458 @@ export function calculateMonthlyCashflowTrend(transactions: Transaction[], month
 }
 
 /**
- * Calculate total Credit Card Outstanding & Available Credit
+ * Calculate total Credit Card Outstanding, Limit, Available, Minimum Due, and Overall Utilization
  */
 export function calculateCreditCardSummary(cards: CreditCard[]) {
-  const totalLimit = safeRound(cards.reduce((sum, c) => sum + (c.creditLimit || 0), 0));
-  const totalOutstanding = safeRound(cards.reduce((sum, c) => sum + (c.currentOutstanding || 0), 0));
-  const totalAvailable = safeRound(totalLimit - totalOutstanding);
-  const totalMinimumDue = safeRound(cards.reduce((sum, c) => sum + (c.minimumDue || 0), 0));
+  const activeCards = cards.filter((c) => c.status !== 'Archived');
+  const totalLimit = safeRound(activeCards.reduce((sum, c) => sum + (c.creditLimit || 0), 0));
+  const totalOutstanding = safeRound(activeCards.reduce((sum, c) => sum + (c.currentOutstanding || 0), 0));
+  const totalAvailable = safeRound(Math.max(0, totalLimit - totalOutstanding));
+  const totalMinimumDue = safeRound(activeCards.reduce((sum, c) => sum + (c.minimumDue || 0), 0));
+  const totalDueThisMonth = safeRound(
+    activeCards.reduce((sum, c) => sum + (c.statementBalance ?? (c.minimumDue > 0 ? c.minimumDue : c.currentOutstanding) ?? 0), 0)
+  );
+  const overallUtilization = totalLimit > 0 ? safeRound((totalOutstanding / totalLimit) * 100) : 0;
 
-  return { totalLimit, totalOutstanding, totalAvailable, totalMinimumDue };
+  return {
+    totalLimit,
+    totalOutstanding,
+    totalAvailable,
+    totalMinimumDue,
+    totalDueThisMonth,
+    overallUtilization
+  };
+}
+
+/**
+ * Utilization health status profile (0-30% Healthy, 30-50% Moderate, 50-75% High, 75%+ Very High)
+ */
+export function getCreditUtilizationStatus(utilizationPct: number): {
+  label: 'Healthy' | 'Moderate' | 'High' | 'Very High';
+  color: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  description: string;
+} {
+  if (utilizationPct <= 30) {
+    return {
+      label: 'Healthy',
+      color: '#10b981',
+      badgeBg: 'bg-emerald-500/15',
+      badgeText: 'text-emerald-700 dark:text-emerald-300',
+      badgeBorder: 'border-emerald-500/30',
+      description: 'Healthy utilization (<30%) protects your credit score.'
+    };
+  }
+  if (utilizationPct <= 50) {
+    return {
+      label: 'Moderate',
+      color: '#f59e0b',
+      badgeBg: 'bg-amber-500/15',
+      badgeText: 'text-amber-700 dark:text-amber-300',
+      badgeBorder: 'border-amber-500/30',
+      description: 'Moderate utilization (30-50%). Aim to keep under 30%.'
+    };
+  }
+  if (utilizationPct <= 75) {
+    return {
+      label: 'High',
+      color: '#f97316',
+      badgeBg: 'bg-orange-500/15',
+      badgeText: 'text-orange-700 dark:text-orange-300',
+      badgeBorder: 'border-orange-500/30',
+      description: 'High utilization (50-75%). Pay down balances to avoid interest.'
+    };
+  }
+  return {
+    label: 'Very High',
+    color: '#ef4444',
+    badgeBg: 'bg-rose-500/15',
+    badgeText: 'text-rose-700 dark:text-rose-300',
+    badgeBorder: 'border-rose-500/30',
+    description: 'Very high utilization (>75%). Immediate debt reduction recommended.'
+  };
+}
+
+/**
+ * Calculate Monthly EMI Commitment and Total Outstanding EMI Debt
+ */
+export function calculateMonthlyEMICommitment(emis: EMI[]) {
+  const activeEMIs = emis.filter(
+    (e) => e.status !== 'Completed' && e.status !== 'Preclosed' && e.status !== 'Cancelled'
+  );
+
+  const monthlyCommitment = safeRound(
+    activeEMIs.reduce((sum, e) => sum + (e.monthlyEmi || e.emiAmount || 0), 0)
+  );
+
+  const totalRemainingDebt = safeRound(
+    activeEMIs.reduce((sum, e) => {
+      const emiAmt = e.monthlyEmi || e.emiAmount || 0;
+      const paidCount = e.paidInstallments ?? e.paidMonths ?? 0;
+      const paidAmt = paidCount * emiAmt;
+      const totalPay = e.totalPayable ?? e.purchaseAmount ?? e.principalAmount;
+      return sum + Math.max(0, totalPay - paidAmt);
+    }, 0)
+  );
+
+  return {
+    monthlyCommitment,
+    totalRemainingDebt,
+    activeCount: activeEMIs.length
+  };
+}
+
+/**
+ * Compute EMI financial breakdown for No-Cost vs Regular EMI
+ */
+export function calculateEMIFinancials(
+  principal: number,
+  tenureMonths: number,
+  interestRate: number = 0,
+  processingFee: number = 0,
+  isNoCost: boolean = false
+): {
+  principal: number;
+  interestAmount: number;
+  processingFee: number;
+  taxAmount: number;
+  totalPayable: number;
+  monthlyEmi: number;
+} {
+  const safePrincipal = Math.max(0, principal);
+  const safeTenure = Math.max(1, tenureMonths);
+  const safeProcFee = Math.max(0, processingFee);
+  const taxAmount = safeRound(safeProcFee * 0.18); // 18% GST on processing fee
+
+  if (isNoCost || interestRate <= 0) {
+    const monthlyEmi = safeRound(safePrincipal / safeTenure);
+    const totalPayable = safeRound(safePrincipal + safeProcFee + taxAmount);
+    return {
+      principal: safePrincipal,
+      interestAmount: 0,
+      processingFee: safeProcFee,
+      taxAmount,
+      totalPayable,
+      monthlyEmi
+    };
+  }
+
+  // Regular EMI with reducing balance formula: E = P * r * (1+r)^n / ((1+r)^n - 1)
+  const r = (interestRate / 12) / 100;
+  const emiFactor = Math.pow(1 + r, safeTenure);
+  const monthlyEmi = safeRound((safePrincipal * r * emiFactor) / (emiFactor - 1));
+  const totalRepayment = safeRound(monthlyEmi * safeTenure);
+  const interestAmount = safeRound(Math.max(0, totalRepayment - safePrincipal));
+  const totalPayable = safeRound(totalRepayment + safeProcFee + taxAmount);
+
+  return {
+    principal: safePrincipal,
+    interestAmount,
+    processingFee: safeProcFee,
+    taxAmount,
+    totalPayable,
+    monthlyEmi
+  };
+}
+
+/**
+ * Calculate derived annual interest rate (% p.a.) from Principal, Monthly EMI, and Tenure (formatted to 2 decimal places)
+ */
+export function calculateDerivedInterestRate(
+  principal: number,
+  monthlyEmi: number,
+  tenureMonths: number
+): number {
+  if (principal <= 0 || monthlyEmi <= 0 || tenureMonths <= 0) return 0;
+  const totalPayable = monthlyEmi * tenureMonths;
+  if (totalPayable <= principal) return 0;
+
+  const totalInterest = totalPayable - principal;
+  const flatRate = (totalInterest / principal) / (tenureMonths / 12) * 100;
+  return Number(flatRate.toFixed(2));
+}
+
+/**
+ * Generate full installment schedule for an EMI with amortization and overdue handling
+ */
+export function generateEMISchedule(emi: EMI): EMIInstallment[] {
+  const tenure = Math.max(1, emi.tenureMonths || 12);
+  const emiAmt = emi.monthlyEmi || emi.emiAmount || safeRound((emi.totalPayable ?? emi.purchaseAmount) / tenure);
+  const paidCount = Math.min(tenure, Math.max(0, emi.paidInstallments ?? emi.paidMonths ?? 0));
+  const interestRate = emi.interestRate || 0;
+  const totalPurch = emi.principalAmount || emi.purchaseAmount || 0;
+  const totalPay = emi.totalPayable || (emiAmt * tenure);
+  const derivedInterest = Math.max(0, (emi.interestAmount ?? (totalPay - totalPurch)));
+  const isNoCost = emi.emiType === 'No-cost EMI' && derivedInterest <= 0;
+
+  const schedule: EMIInstallment[] = [];
+  const baseDate = emi.firstDueDate ? new Date(emi.firstDueDate) : new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let runningPrincipal = totalPurch;
+  const monthlyRate = interestRate > 0 ? (interestRate / 12) / 100 : 0;
+  const flatMonthlyInterest = tenure > 0 ? safeRound(derivedInterest / tenure) : 0;
+
+  for (let i = 1; i <= tenure; i++) {
+    const dueDate = new Date(baseDate);
+    dueDate.setMonth(baseDate.getMonth() + (i - 1));
+    dueDate.setHours(0, 0, 0, 0);
+
+    let principalPortion = 0;
+    let interestPortion = 0;
+
+    if (isNoCost || derivedInterest <= 0) {
+      principalPortion = safeRound(runningPrincipal / (tenure - i + 1));
+      interestPortion = 0;
+      runningPrincipal = Math.max(0, runningPrincipal - principalPortion);
+    } else if (interestRate > 0) {
+      interestPortion = safeRound(runningPrincipal * monthlyRate);
+      principalPortion = safeRound(Math.min(runningPrincipal, Math.max(0, emiAmt - interestPortion)));
+      runningPrincipal = Math.max(0, runningPrincipal - principalPortion);
+    } else {
+      // Derived finance cost without known APR
+      interestPortion = i === tenure ? Math.max(0, derivedInterest - flatMonthlyInterest * (tenure - 1)) : flatMonthlyInterest;
+      principalPortion = safeRound(Math.max(0, emiAmt - interestPortion));
+      runningPrincipal = Math.max(0, runningPrincipal - principalPortion);
+    }
+
+    let status: 'Paid' | 'Upcoming' | 'Due' | 'Overdue' = 'Upcoming';
+    if (i <= paidCount) {
+      status = 'Paid';
+    } else {
+      const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) {
+        status = 'Overdue';
+      } else if (diffDays <= 7 && i === paidCount + 1) {
+        status = 'Due';
+      } else {
+        status = 'Upcoming';
+      }
+    }
+
+    schedule.push({
+      installmentNumber: i,
+      dueDate: dueDate.toISOString().split('T')[0],
+      emiAmount: emiAmt,
+      principal: principalPortion,
+      interest: interestPortion,
+      status
+    });
+  }
+
+  return schedule;
+}
+
+/**
+ * Compute calculations for an ongoing / existing EMI
+ */
+export function calculateOngoingEMIFinancials(
+  originalAmount: number,
+  monthlyEmi: number,
+  tenureMonths: number,
+  paidInstallments: number,
+  firstDueDateStr: string,
+  interestRate: number = 0,
+  isNoCost: boolean = false,
+  baseDate: Date = new Date()
+) {
+  const safeTenure = Math.max(1, tenureMonths);
+  const safeMonthlyEmi = monthlyEmi > 0 ? monthlyEmi : safeRound(originalAmount / safeTenure);
+  
+  const today = new Date(baseDate);
+  today.setHours(0, 0, 0, 0);
+
+  const firstDate = firstDueDateStr ? new Date(firstDueDateStr) : new Date(baseDate);
+  firstDate.setHours(0, 0, 0, 0);
+
+  // Generate all installment due dates
+  const installmentDates: Date[] = [];
+  let dueReachedCount = 0;
+
+  for (let i = 0; i < safeTenure; i++) {
+    const d = new Date(firstDate);
+    d.setMonth(firstDate.getMonth() + i);
+    d.setHours(0, 0, 0, 0);
+    installmentDates.push(d);
+
+    // Has this installment reached or passed today's date?
+    if (d <= today) {
+      dueReachedCount++;
+    }
+  }
+
+  // Maximum allowable paid installments cannot exceed the number of installments reached by today
+  const maxAllowedPaid = dueReachedCount;
+  const isPaidExceeded = paidInstallments > maxAllowedPaid;
+  const safePaidCount = Math.max(0, Math.min(safeTenure, paidInstallments));
+
+  const safeOriginalAmount = Math.max(0, originalAmount);
+  const totalPayable = safeRound(safeMonthlyEmi * safeTenure);
+  const totalInterest = safeRound(Math.max(0, totalPayable - safeOriginalAmount));
+  const paidAmount = safeRound(safePaidCount * safeMonthlyEmi);
+  const remainingAmount = safeRound(Math.max(0, totalPayable - paidAmount));
+  const remainingInstallments = Math.max(0, safeTenure - safePaidCount);
+
+  // Overdue count: installments that have reached due date by today but are not marked as paid
+  const overdueCount = Math.max(0, dueReachedCount - safePaidCount);
+
+  // Next Due Date: the earliest UNPAID installment date
+  let nextDueDate = firstDueDateStr;
+  let nextDueStatus: 'Paid' | 'Overdue' | 'Due Today' | 'Upcoming' = 'Upcoming';
+
+  if (safePaidCount < safeTenure && installmentDates[safePaidCount]) {
+    const earliestUnpaidDate = installmentDates[safePaidCount];
+    nextDueDate = earliestUnpaidDate.toISOString().split('T')[0];
+
+    if (earliestUnpaidDate < today) {
+      nextDueStatus = 'Overdue';
+    } else if (earliestUnpaidDate.getTime() === today.getTime()) {
+      nextDueStatus = 'Due Today';
+    } else {
+      nextDueStatus = 'Upcoming';
+    }
+  } else if (safePaidCount >= safeTenure) {
+    nextDueStatus = 'Paid';
+  }
+
+  return {
+    totalPayable,
+    totalInterest,
+    paidAmount,
+    remainingAmount,
+    remainingInstallments,
+    dueReachedCount,
+    maxAllowedPaid,
+    isPaidExceeded,
+    overdueCount,
+    nextDueDate,
+    nextDueStatus,
+    installmentDates: installmentDates.map((d) => d.toISOString().split('T')[0])
+  };
+}
+
+/**
+ * Safely compute upcoming statement date and payment due date from day-of-month (1-31)
+ */
+export function getNextBillingDates(
+  statementDay: number = 15,
+  paymentDueDay: number = 5,
+  baseDate: Date = new Date()
+): {
+  nextStatementDate: string;
+  nextPaymentDueDate: string;
+  statementDateObj: Date;
+  paymentDueDateObj: Date;
+} {
+  const currentYear = baseDate.getFullYear();
+  const currentMonth = baseDate.getMonth();
+  const todayDate = baseDate.getDate();
+
+  const clampDay = (year: number, month: number, day: number) => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Math.min(Math.max(1, day), daysInMonth);
+  };
+
+  // 1. Calculate next statement date
+  let stmtYear = currentYear;
+  let stmtMonth = currentMonth;
+  if (todayDate > statementDay) {
+    stmtMonth += 1;
+    if (stmtMonth > 11) {
+      stmtMonth = 0;
+      stmtYear += 1;
+    }
+  }
+  const safeStmtDay = clampDay(stmtYear, stmtMonth, statementDay);
+  const statementDateObj = new Date(stmtYear, stmtMonth, safeStmtDay);
+
+  // 2. Calculate next payment due date
+  let dueYear = currentYear;
+  let dueMonth = currentMonth;
+  if (todayDate > paymentDueDay) {
+    dueMonth += 1;
+    if (dueMonth > 11) {
+      dueMonth = 0;
+      dueYear += 1;
+    }
+  }
+  const safeDueDay = clampDay(dueYear, dueMonth, paymentDueDay);
+  const paymentDueDateObj = new Date(dueYear, dueMonth, safeDueDay);
+
+  return {
+    nextStatementDate: statementDateObj.toISOString().split('T')[0],
+    nextPaymentDueDate: paymentDueDateObj.toISOString().split('T')[0],
+    statementDateObj,
+    paymentDueDateObj
+  };
+}
+
+/**
+ * Format relative due badge and text (e.g. "Due in 3 days · Sep 5" or "Due Today · Aug 26")
+ */
+export function getRelativeDueLabel(
+  dueDateStr: string,
+  baseDate: Date = new Date()
+): {
+  label: string;
+  shortLabel: string;
+  status: 'Overdue' | 'Due Today' | 'Due Soon' | 'Upcoming' | 'Paid';
+  diffDays: number;
+} {
+  const today = new Date(baseDate);
+  today.setHours(0, 0, 0, 0);
+
+  const due = new Date(dueDateStr);
+  due.setHours(0, 0, 0, 0);
+
+  const diffTime = due.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const formattedDate = `${monthNames[due.getMonth()]} ${due.getDate()}`;
+
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays);
+    return {
+      label: `Overdue by ${absDays} day${absDays > 1 ? 's' : ''} · ${formattedDate}`,
+      shortLabel: `Overdue (${absDays}d ago)`,
+      status: 'Overdue',
+      diffDays
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      label: `Due Today · ${formattedDate}`,
+      shortLabel: 'Due Today',
+      status: 'Due Today',
+      diffDays: 0
+    };
+  }
+  if (diffDays === 1) {
+    return {
+      label: `Due Tomorrow · ${formattedDate}`,
+      shortLabel: 'Due Tomorrow',
+      status: 'Due Soon',
+      diffDays: 1
+    };
+  }
+  if (diffDays <= 5) {
+    return {
+      label: `Due in ${diffDays} days · ${formattedDate}`,
+      shortLabel: `Due in ${diffDays}d`,
+      status: 'Due Soon',
+      diffDays
+    };
+  }
+  return {
+    label: `Due in ${diffDays} days · ${formattedDate}`,
+    shortLabel: formattedDate,
+    status: 'Upcoming',
+    diffDays
+  };
 }
 
 /**

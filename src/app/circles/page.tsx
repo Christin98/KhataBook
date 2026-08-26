@@ -13,12 +13,12 @@ import {
   Share2,
   Check,
   Zap,
-  User
+  User,
+  ShieldCheck
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { formatCurrency, calculateUserCircleTotals } from '@/lib/calculations';
 import { FUN_CIRCLE_CATEGORIES } from '@/lib/sampleData';
-
 import { CircleMember } from '@/lib/types';
 
 const DEFAULT_MEMBER_NAMES = [
@@ -105,61 +105,63 @@ export default function CirclesListPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Users className="w-8 h-8 text-brand-600" />
-              <span>Expense Splitting Circles</span>
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-              Shared Only
-            </span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 mb-2">
+            <Users className="w-3.5 h-3.5" />
+            <span>Shared Expense Circles</span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Split bills with flatmates, trip buddies, & friends without mixing with personal accounts.
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Circles & Split Ledgers
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            Split bills with flatmates, trips, and friends completely separated from your personal cash.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-600/30 flex items-center gap-2 active:scale-95 transition-all self-start sm:self-center"
+          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-brand-500/25 flex items-center gap-2 active:scale-95 transition-all self-start sm:self-center border border-white/20 glass-shimmer cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>+ Create Circle</span>
+          <span>Create Circle</span>
         </button>
       </div>
 
       {/* Net Splitting Ledger Overview Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-900 dark:text-emerald-300 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center font-bold">
-              <ArrowDownLeft className="w-6 h-6 text-emerald-600" />
+        <div className="glass-card glass-interactive p-6 rounded-3xl flex items-center justify-between shadow-xl group border-emerald-500/20">
+          <div className="flex items-center gap-4">
+            <div className="w-13 h-13 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold border border-emerald-500/30 shadow-inner group-hover:scale-105 transition-transform">
+              <ArrowDownLeft className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Total Money You Are Owed</p>
-              <p className="text-2xl font-extrabold">{formatCurrency(totalReceive)}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Money You Are Owed</p>
+              <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight mt-0.5">
+                {formatCurrency(totalReceive)}
+              </p>
             </div>
           </div>
-          <span className="text-xs font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 px-3 py-1 rounded-full">
+          <span className="text-xs font-black bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-3.5 py-1 rounded-full backdrop-blur-md">
             Receivable
           </span>
         </div>
 
-        <div className="p-5 rounded-3xl bg-rose-500/10 border border-rose-500/20 text-rose-900 dark:text-rose-300 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/20 flex items-center justify-center font-bold">
-              <ArrowUpRight className="w-6 h-6 text-rose-600" />
+        <div className="glass-card glass-interactive p-6 rounded-3xl flex items-center justify-between shadow-xl group border-rose-500/20">
+          <div className="flex items-center gap-4">
+            <div className="w-13 h-13 rounded-2xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold border border-rose-500/30 shadow-inner group-hover:scale-105 transition-transform">
+              <ArrowUpRight className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-medium text-rose-700 dark:text-rose-400">Total Money You Owe Others</p>
-              <p className="text-2xl font-extrabold">{formatCurrency(totalPay)}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Money You Owe Others</p>
+              <p className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 tracking-tight mt-0.5">
+                {formatCurrency(totalPay)}
+              </p>
             </div>
           </div>
-          <span className="text-xs font-bold bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 px-3 py-1 rounded-full">
+          <span className="text-xs font-black bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 px-3.5 py-1 rounded-full backdrop-blur-md">
             Payable
           </span>
         </div>
@@ -167,17 +169,22 @@ export default function CirclesListPage() {
 
       {/* Circles Cards Grid */}
       <div>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Active Circles</h2>
+        <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4">
+          Active Shared Circles
+        </h2>
+
         {circles.length === 0 ? (
-          <div className="glass-panel p-12 text-center rounded-3xl space-y-3">
-            <Users className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600" />
-            <h3 className="font-bold text-slate-700 dark:text-slate-300">No circles yet</h3>
-            <p className="text-xs text-slate-500">
-              Start a Goa Plan, 3 BHK Ki Kahani or Kaminey Dost circle.
+          <div className="glass-card p-16 text-center rounded-3xl space-y-3 shadow-2xl">
+            <div className="w-16 h-16 rounded-3xl bg-brand-500/10 text-brand-500 mx-auto flex items-center justify-center border border-brand-500/20 shadow-inner">
+              <Users className="w-8 h-8" />
+            </div>
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base">No circles yet</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">
+              Start a Goa Plan, Flatmates Rent, or Dinner Squad circle to split seamlessly.
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-md"
+              className="px-5 py-2.5 rounded-2xl bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25 cursor-pointer"
             >
               + Create Circle
             </button>
@@ -191,48 +198,48 @@ export default function CirclesListPage() {
                 <Link
                   key={circle.id}
                   href={`/circles/${circle.id}`}
-                  className="glass-panel p-6 rounded-3xl card-hover flex flex-col justify-between space-y-6 group"
+                  className="glass-card glass-interactive p-6 rounded-3xl flex flex-col justify-between space-y-6 group shadow-xl"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-brand-100 dark:bg-brand-950 text-2xl flex items-center justify-center border border-brand-200 dark:border-brand-800">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-brand-500/20 to-purple-500/20 text-2xl flex items-center justify-center border border-brand-500/30 shadow-inner group-hover:scale-110 transition-transform">
                         {funItem.icon}
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
+                        <h3 className="font-black text-lg text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors leading-snug">
                           {circle.name}
                         </h3>
-                        <span className="text-xs text-brand-600 dark:text-brand-400 font-medium">
+                        <span className="text-xs text-brand-600 dark:text-brand-400 font-bold">
                           {circle.category} • {circle.members.length} Members
                         </span>
                       </div>
                     </div>
 
-                    <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
                   </div>
 
                   {/* Members Avatars preview */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-200/50 dark:border-white/5">
                     <div className="flex items-center -space-x-2">
                       {circle.members.slice(0, 4).map((m, idx) => (
                         <div
                           key={m.id}
-                          className="w-8 h-8 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center ring-2 ring-white dark:ring-slate-900"
+                          className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-xs"
                           title={m.name}
                         >
                           {m.name.charAt(0)}
                         </div>
                       ))}
                       {circle.members.length > 4 && (
-                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 text-xs font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900 border border-white/20">
                           +{circle.members.length - 4}
                         </div>
                       )}
                     </div>
 
                     <div className="text-right">
-                      <span className="text-xs text-slate-400">Total Shared</span>
-                      <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+                      <span className="text-[11px] text-slate-400 font-bold">Total Shared</span>
+                      <p className="text-base font-black text-slate-900 dark:text-white">
                         {formatCurrency(circle.totalExpenses)}
                       </p>
                     </div>
@@ -246,142 +253,117 @@ export default function CirclesListPage() {
 
       {/* Create Circle Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl z-10 border border-slate-100 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Create New Circle</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
+          <div className="relative w-full max-w-lg glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl p-6 sm:p-7 shadow-2xl z-10 border border-white/40 dark:border-white/10 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-white/10">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Create New Circle</h3>
+              <span className="text-xs text-brand-600 dark:text-brand-400 font-bold">Shared Splitting</span>
+            </div>
 
             <form onSubmit={handleCreateCircle} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Circle Name</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Circle Name</label>
                 <input
                   type="text"
-                  placeholder="e.g., Goa Trip 2026, 3 BHK Rent & WiFi"
+                  placeholder="e.g., Goa Trip 2026, Flat 402 Rent & WiFi"
                   value={circleName}
                   onChange={(e) => setCircleName(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl text-sm font-semibold text-slate-900 dark:text-white"
+                  className="w-full px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-2">
-                  Select Fun Category
-                </label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1 border rounded-2xl">
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Category</label>
+                <div className="grid grid-cols-3 gap-2">
                   {FUN_CIRCLE_CATEGORIES.map((cat) => (
                     <button
-                      type="button"
                       key={cat.name}
-                      onClick={() => {
-                        setSelectedFunCategory(cat.name);
-                        if (!circleName) setCircleName(cat.name);
-                      }}
-                      className={`p-2 rounded-xl text-left text-xs font-medium flex items-center gap-2 transition-all ${
+                      type="button"
+                      onClick={() => setSelectedFunCategory(cat.name)}
+                      className={`p-2.5 rounded-2xl flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
                         selectedFunCategory === cat.name
-                          ? 'bg-brand-600 text-white font-bold shadow'
-                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                          ? 'bg-brand-500/20 text-brand-700 dark:text-brand-300 border border-brand-500/40 shadow-xs'
+                          : 'glass-subtle text-slate-600 dark:text-slate-400'
                       }`}
                     >
-                      <span className="text-base">{cat.icon}</span>
+                      <span className="text-lg">{cat.icon}</span>
                       <span className="truncate">{cat.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Number of Members Selector */}
+              {/* Number of members selector */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-medium text-slate-500">
-                    Number of Members (including you)
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                    Total Circle Members ({memberCount})
                   </label>
-                  <span className="text-xs font-extrabold text-brand-600 dark:text-brand-400">
-                    {memberCount} Members
-                  </span>
+                  <span className="text-[11px] text-slate-400">Includes You</span>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => handleMemberCountChange(memberCount - 1)}
                     disabled={memberCount <= 2}
-                    className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 flex items-center justify-center shrink-0"
+                    className="p-2 rounded-xl glass-subtle hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-
-                  <div className="flex flex-1 items-center justify-around gap-1">
-                    {[2, 3, 4, 5, 6, 8].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => handleMemberCountChange(num)}
-                        className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all ${
-                          memberCount === num
-                            ? 'bg-brand-600 text-white shadow-md'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                        }`}
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-
+                  <input
+                    type="range"
+                    min="2"
+                    max="12"
+                    value={memberCount}
+                    onChange={(e) => handleMemberCountChange(parseInt(e.target.value))}
+                    className="flex-1 accent-brand-600"
+                  />
                   <button
                     type="button"
                     onClick={() => handleMemberCountChange(memberCount + 1)}
-                    disabled={memberCount >= 15}
-                    className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 flex items-center justify-center shrink-0"
+                    disabled={memberCount >= 12}
+                    className="p-2 rounded-xl glass-subtle hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Customize Member Names */}
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-2">
-                  Member Names
-                </label>
-                <div className="space-y-2 max-h-36 overflow-y-auto p-1">
-                  <div className="flex items-center gap-2 p-2 rounded-xl bg-brand-50 dark:bg-brand-950/40 border border-brand-200/60 dark:border-brand-800/40 text-xs">
-                    <span className="font-bold text-brand-600">Member 1:</span>
-                    <span className="font-bold text-slate-900 dark:text-white flex-1 truncate">
-                      {user.displayName} (You - Circle Owner)
-                    </span>
-                  </div>
-
-                  {memberNames.map((name, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs">
-                      <span className="font-semibold text-slate-400 w-20 shrink-0">
-                        Member {idx + 2}:
-                      </span>
-                      <input
-                        type="text"
-                        placeholder={`Member ${idx + 2} Name`}
-                        value={name}
-                        onChange={(e) => handleMemberNameUpdate(idx, e.target.value)}
-                        className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border rounded-xl font-medium text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-brand-500"
-                      />
-                    </div>
-                  ))}
+              {/* Member names list */}
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                  <User className="w-4 h-4 text-brand-500" />
+                  <span>1. {user.displayName} (You, Admin)</span>
                 </div>
+                {memberNames.map((name, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 w-4">{idx + 2}.</span>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => handleMemberNameUpdate(idx, e.target.value)}
+                      placeholder={`Member ${idx + 2} name`}
+                      className="flex-1 px-3 py-1.5 glass-input rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    />
+                  </div>
+                ))}
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold text-slate-600 dark:text-slate-300"
+                  className="flex-1 py-3 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-md hover:bg-brand-700"
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white text-xs font-black shadow-lg shadow-brand-500/25 border border-white/20 cursor-pointer hover:from-brand-500 hover:to-indigo-500 active:scale-95 transition-all"
                 >
-                  Create Circle ({memberCount} Members)
+                  Create Circle
                 </button>
               </div>
             </form>
@@ -391,4 +373,3 @@ export default function CirclesListPage() {
     </div>
   );
 }
-

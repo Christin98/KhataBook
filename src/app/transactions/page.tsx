@@ -13,7 +13,8 @@ import {
   Calendar,
   Building2,
   Check,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { formatCurrency } from '@/lib/calculations';
@@ -24,6 +25,8 @@ export default function TransactionsPage() {
     transactions,
     accounts,
     categories,
+    expenseCategories,
+    incomeCategories,
     addCategory,
     addTransaction,
     deleteTransaction,
@@ -52,11 +55,26 @@ export default function TransactionsPage() {
   const [isAddingCategory, setIsAddingCategory] = useState<boolean>(false);
   const [newCategoryInput, setNewCategoryInput] = useState<string>('');
 
+  const activeCategories = formType === 'income' ? incomeCategories : expenseCategories;
+
+  const handleFormTypeChange = (type: TransactionType) => {
+    setFormType(type);
+    if (type === 'income') {
+      if (!incomeCategories.includes(category)) {
+        setCategory(incomeCategories[0] || 'Salary');
+      }
+    } else if (type === 'expense') {
+      if (!expenseCategories.includes(category)) {
+        setCategory(expenseCategories[0] || 'Food & Dining');
+      }
+    }
+  };
+
   const handleAddNewCategory = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = newCategoryInput.trim();
     if (trimmed) {
-      addCategory(trimmed);
+      addCategory(trimmed, formType === 'income' ? 'income' : 'expense');
       setCategory(trimmed);
       setNewCategoryInput('');
       setIsAddingCategory(false);
@@ -124,64 +142,68 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <Receipt className="w-8 h-8 text-brand-600" />
-            <span>Personal Transactions</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-brand-500/10 text-brand-600 dark:text-brand-300 border border-brand-500/20 mb-2">
+            <Receipt className="w-3.5 h-3.5" />
+            <span>Complete Ledger History</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Personal Transactions
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Complete transaction ledger. Transfers do not count as expenses.
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            Real-time ledger audit log. Self-transfers do not calculate as expenses.
           </p>
         </div>
+
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-600/30 flex items-center gap-2 active:scale-95 transition-all self-start sm:self-center"
+          className="px-5 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-brand-500/25 flex items-center gap-2 active:scale-95 transition-all self-start sm:self-center border border-white/20 glass-shimmer cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>New Transaction</span>
         </button>
       </div>
 
-      {/* Type Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
+      {/* Segmented Type Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200/50 dark:border-white/10 pb-3 overflow-x-auto">
         {(['all', 'expense', 'income', 'transfer'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all shrink-0 ${
+            className={`px-4 py-2 rounded-2xl text-xs font-extrabold capitalize transition-all shrink-0 cursor-pointer ${
               activeTab === tab
-                ? 'bg-brand-600 text-white shadow-md shadow-brand-600/20'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 border border-white/20'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800/60'
             }`}
           >
-            {tab}
+            {tab === 'all' ? 'All Activities' : tab}
           </button>
         ))}
       </div>
 
       {/* Filter Controls Bar */}
-      <div className="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-3">
-        {/* Search */}
+      <div className="glass-card p-4 sm:p-5 rounded-3xl flex flex-col sm:flex-row items-center gap-3.5 shadow-xl">
+        {/* Search Input */}
         <div className="relative w-full sm:flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-brand-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search description or category..."
+            placeholder="Search description, merchant, or category..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-10 pr-4 py-2.5 glass-input rounded-2xl text-xs font-medium text-slate-900 dark:text-white focus:outline-none"
           />
         </div>
 
         {/* Category Select */}
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-52">
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500"
+            className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
           >
             <option value="all">All Categories</option>
             {categories.map((cat) => (
@@ -193,11 +215,11 @@ export default function TransactionsPage() {
         </div>
 
         {/* Account Select */}
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-52">
           <select
             value={selectedAccount}
             onChange={(e) => setSelectedAccount(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500"
+            className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
           >
             <option value="all">All Accounts</option>
             {accounts.map((acc) => (
@@ -210,15 +232,19 @@ export default function TransactionsPage() {
       </div>
 
       {/* Transactions List */}
-      <div className="glass-panel rounded-3xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="glass-card rounded-3xl overflow-hidden divide-y divide-slate-200/50 dark:divide-white/5 shadow-2xl">
         {filteredTransactions.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 space-y-3">
-            <Receipt className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600" />
-            <h3 className="font-bold text-slate-700 dark:text-slate-300">No transactions found</h3>
-            <p className="text-xs">Your first expense or income is waiting to be recorded.</p>
+          <div className="py-20 text-center text-slate-400 space-y-3">
+            <div className="w-16 h-16 rounded-3xl bg-brand-500/10 text-brand-500 mx-auto flex items-center justify-center border border-brand-500/20 shadow-inner">
+              <Receipt className="w-8 h-8" />
+            </div>
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-base">No transactions found</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">
+              No matching records found for the selected filter or search query.
+            </p>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-md"
+              className="px-5 py-2.5 rounded-2xl bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25 cursor-pointer"
             >
               + Record Expense
             </button>
@@ -227,37 +253,37 @@ export default function TransactionsPage() {
           filteredTransactions.map((t) => (
             <div
               key={t.id}
-              className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+              className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-white/40 dark:hover:bg-slate-800/40 transition-colors group"
             >
               <div className="flex items-center gap-3.5 min-w-0">
                 <div
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-base shrink-0 ${
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base shrink-0 shadow-inner ${
                     t.type === 'income'
-                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600'
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                       : t.type === 'transfer'
-                      ? 'bg-brand-100 dark:bg-brand-950 text-brand-600'
-                      : 'bg-rose-100 dark:bg-rose-950 text-rose-600'
+                      ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30'
+                      : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
                   }`}
                 >
                   {t.type === 'income' ? (
                     <ArrowDownLeft className="w-5 h-5" />
                   ) : t.type === 'transfer' ? (
-                    <RefreshCw className="w-4 h-4" />
+                    <RefreshCw className="w-5 h-5" />
                   ) : (
                     <ArrowUpRight className="w-5 h-5" />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">{t.description}</h4>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-0.5">
-                    <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">{t.description}</h4>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-1 font-medium">
+                    <span className="px-2 py-0.5 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-300/40 dark:border-white/5">
                       {t.category}
                     </span>
                     <span>•</span>
                     <span>{getAccountName(t.accountId)}</span>
                     {t.toAccountId && (
                       <>
-                        <span>➔</span>
+                        <span className="text-brand-500">➔</span>
                         <span>{getAccountName(t.toAccountId)}</span>
                       </>
                     )}
@@ -270,7 +296,7 @@ export default function TransactionsPage() {
               <div className="flex items-center gap-4 shrink-0">
                 <div className="text-right">
                   <div
-                    className={`font-extrabold text-base ${
+                    className={`font-black text-base ${
                       t.type === 'income'
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : t.type === 'transfer'
@@ -280,12 +306,12 @@ export default function TransactionsPage() {
                   >
                     {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{formatCurrency(t.amount)}
                   </div>
-                  <span className="text-[10px] text-slate-400">{t.paymentMethod || 'Direct'}</span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">{t.paymentMethod || 'Direct'}</span>
                 </div>
 
                 <button
                   onClick={() => deleteTransaction(t.id)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
+                  className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20 cursor-pointer"
                   title="Delete transaction"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -296,77 +322,87 @@ export default function TransactionsPage() {
         )}
       </div>
 
-      {/* Detailed Modal Form */}
+      {/* Modal Form */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl z-10 border border-slate-100 dark:border-slate-800 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Record Transaction</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setIsAddModalOpen(false)} />
+          <div className="relative w-full max-w-md glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl p-6 sm:p-7 shadow-2xl z-10 border border-white/40 dark:border-white/10 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-white/10">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Record Transaction</h3>
+              <span className="text-xs text-brand-600 dark:text-brand-400 font-bold">Personal Ledger</span>
+            </div>
 
+            {/* Type selector */}
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setFormType('expense')}
-                className={`py-2 rounded-xl text-xs font-bold ${
-                  formType === 'expense' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'
+                onClick={() => handleFormTypeChange('expense')}
+                className={`py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+                  formType === 'expense'
+                    ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                    : 'glass-subtle text-slate-600 dark:text-slate-400'
                 }`}
               >
                 Expense
               </button>
               <button
                 type="button"
-                onClick={() => setFormType('income')}
-                className={`py-2 rounded-xl text-xs font-bold ${
-                  formType === 'income' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'
+                onClick={() => handleFormTypeChange('income')}
+                className={`py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+                  formType === 'income'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                    : 'glass-subtle text-slate-600 dark:text-slate-400'
                 }`}
               >
                 Income
               </button>
               <button
                 type="button"
-                onClick={() => setFormType('transfer')}
-                className={`py-2 rounded-xl text-xs font-bold ${
-                  formType === 'transfer' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'
+                onClick={() => handleFormTypeChange('transfer')}
+                className={`py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+                  formType === 'transfer'
+                    ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30'
+                    : 'glass-subtle text-slate-600 dark:text-slate-400'
                 }`}
               >
                 Transfer
               </button>
             </div>
 
-            <form onSubmit={handleCreateTransaction} className="space-y-3">
+            <form onSubmit={handleCreateTransaction} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Amount (₹)</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Amount (₹)</label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-lg font-bold text-slate-900 dark:text-white"
+                  className="w-full px-4 py-3 glass-input rounded-2xl text-xl font-black text-slate-900 dark:text-white focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Description / Note</label>
                 <input
                   type="text"
-                  placeholder="e.g. Uber, Groceries, Salary"
+                  placeholder="e.g. Uber, Dinner with friends, Freelance"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-sm"
+                  className="w-full px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                   required
                 />
               </div>
 
               {formType === 'transfer' ? (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">From Account</label>
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">From Account</label>
                     <select
                       value={accountId}
                       onChange={(e) => handleFromAccountChange(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium text-slate-900 dark:text-white"
+                      className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
                     >
                       {accounts.map((a) => (
                         <option key={a.id} value={a.id}>
@@ -377,11 +413,11 @@ export default function TransactionsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Transfer To Account</label>
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Transfer To</label>
                     <select
                       value={toAccountId}
                       onChange={(e) => setToAccountId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium text-slate-900 dark:text-white"
+                      className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
                     >
                       {accounts
                         .filter((a) => a.id !== accountId)
@@ -394,15 +430,15 @@ export default function TransactionsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-medium text-slate-500">Category</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Category</label>
                       {!isAddingCategory && (
                         <button
                           type="button"
                           onClick={() => setIsAddingCategory(true)}
-                          className="text-[11px] font-bold text-brand-600 dark:text-brand-400 hover:underline"
+                          className="text-[11px] font-extrabold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                         >
                           + New
                         </button>
@@ -414,7 +450,7 @@ export default function TransactionsPage() {
                         <input
                           type="text"
                           autoFocus
-                          placeholder="Category Name"
+                          placeholder="Category"
                           value={newCategoryInput}
                           onChange={(e) => setNewCategoryInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -423,19 +459,19 @@ export default function TransactionsPage() {
                               handleAddNewCategory();
                             }
                           }}
-                          className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-800 border border-brand-500 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                          className="w-full px-2.5 py-2 glass-input border-brand-500 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={handleAddNewCategory}
-                          className="px-2 py-1.5 bg-brand-600 text-white rounded-xl text-xs font-bold shrink-0"
+                          className="px-2 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => setIsAddingCategory(false)}
-                          className="px-1 py-1.5 text-slate-400 hover:text-slate-600 shrink-0"
+                          className="px-1 py-2 text-slate-400 hover:text-slate-600 shrink-0 cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -450,24 +486,24 @@ export default function TransactionsPage() {
                             setCategory(e.target.value);
                           }
                         }}
-                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium text-slate-900 dark:text-white"
+                        className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
                       >
-                        {categories.map((cat) => (
+                        {activeCategories.map((cat) => (
                           <option key={cat} value={cat}>
                             {cat}
                           </option>
                         ))}
-                        <option value="__NEW_CATEGORY__">+ Add Custom Category...</option>
+                        <option value="__NEW_CATEGORY__">+ Add Custom...</option>
                       </select>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Account</label>
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Account</label>
                     <select
                       value={accountId}
                       onChange={(e) => setAccountId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium"
+                      className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
                     >
                       {accounts.map((a) => (
                         <option key={a.id} value={a.id}>
@@ -480,28 +516,28 @@ export default function TransactionsPage() {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Date</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Date</label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-sm"
+                  className="w-full px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold"
+                  className="flex-1 py-3 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-md"
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white text-xs font-black shadow-lg shadow-brand-500/25 border border-white/20 cursor-pointer hover:from-brand-500 hover:to-indigo-500 active:scale-95 transition-all"
                 >
-                  Save
+                  Save Transaction
                 </button>
               </div>
             </form>

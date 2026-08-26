@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, X, Receipt, Users, Building2, CreditCard, Landmark, ArrowRight } from 'lucide-react';
+import { Search, X, Receipt, Users, Building2, CreditCard, Landmark, ArrowRight, Sparkles } from 'lucide-react';
 import { useData } from '@/context/DataContext';
+import BankLogo from '@/components/common/BankLogo';
 
 export default function GlobalSearchModal() {
   const {
@@ -72,62 +73,54 @@ export default function GlobalSearchModal() {
     filteredLoans.length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4">
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsSearchModalOpen(false)} />
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 animate-fadeIn">
+      {/* Frosted Backdrop */}
+      <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md" onClick={() => setIsSearchModalOpen(false)} />
 
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-10 flex flex-col max-h-[80vh]">
+      <div className="relative w-full max-w-2xl glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl shadow-2xl border border-white/40 dark:border-white/10 overflow-hidden z-10 flex flex-col max-h-[80vh]">
         {/* Search Bar Input */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-          <Search className="w-5 h-5 text-slate-400" />
+        <div className="p-4 sm:p-5 border-b border-slate-200/50 dark:border-white/10 flex items-center gap-3.5">
+          <Search className="w-5 h-5 text-brand-500" />
           <input
             type="text"
             autoFocus
-            placeholder="Type to search transactions, friends (Rahul), circles, cards..."
+            placeholder="Type to search transactions, friends (Rahul), circles, cards, loans..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 bg-transparent text-base font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+            className="flex-1 bg-transparent text-base font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="p-1 text-slate-400 hover:text-slate-600">
+            <button onClick={() => setQuery('')} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={() => setIsSearchModalOpen(false)}
-            className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800"
+            className="text-xs font-black text-slate-500 hover:text-slate-900 dark:hover:text-white px-2.5 py-1 rounded-xl glass-subtle cursor-pointer"
           >
             Esc
           </button>
         </div>
 
-        {/* Results Container */}
-        <div className="p-4 overflow-y-auto space-y-6">
-          {!cleanQuery ? (
-            <div className="py-8 text-center text-slate-400 text-sm">
-              <p>Search across transactions, circles, accounts, credit cards, and loans.</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {['Goa Plan', 'Rahul', 'HDFC', 'Salary', 'Groceries', 'iPhone'].map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => setQuery(tag)}
-                    className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950"
-                  >
-                    "{tag}"
-                  </button>
-                ))}
-              </div>
+        {/* Results Body */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
+          {!query ? (
+            <div className="py-12 text-center text-slate-400 space-y-2">
+              <Sparkles className="w-8 h-8 mx-auto text-brand-500/60" />
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-300">Quick Global Search</p>
+              <p className="text-[11px]">Type an expense description, friend's name, bank account, or circle to jump instantly.</p>
             </div>
           ) : totalResults === 0 ? (
-            <div className="py-10 text-center text-slate-400">
-              <p className="font-semibold">No matches found for "{query}"</p>
-              <p className="text-xs mt-1">Try searching by category, friend's name, or bank name.</p>
+            <div className="py-12 text-center text-slate-400 space-y-2">
+              <p className="text-sm font-bold text-slate-600 dark:text-slate-300">No results found for "{query}"</p>
+              <p className="text-xs">Try searching by category (Food, Travel), member name, or card bank.</p>
             </div>
           ) : (
             <>
               {/* Transactions Matches */}
               {filteredTxns.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400">
                     <Receipt className="w-3.5 h-3.5" />
                     <span>Transactions ({filteredTxns.length})</span>
                   </div>
@@ -137,18 +130,14 @@ export default function GlobalSearchModal() {
                         key={t.id}
                         href="/transactions"
                         onClick={() => setIsSearchModalOpen(false)}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        className="p-3 rounded-2xl glass-subtle hover:bg-brand-500/10 flex items-center justify-between transition-colors group"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{t.description}</p>
-                          <p className="text-xs text-slate-500">{t.category} • {t.date}</p>
+                          <p className="text-xs font-black text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400">{t.description}</p>
+                          <p className="text-[11px] text-slate-400 font-medium">{t.category} • {t.date}</p>
                         </div>
-                        <span
-                          className={`font-bold text-sm ${
-                            t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'
-                          }`}
-                        >
-                          {t.type === 'income' ? '+' : '-'}₹{t.amount}
+                        <span className={`font-black text-xs ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          ₹{t.amount.toLocaleString('en-IN')}
                         </span>
                       </Link>
                     ))}
@@ -158,26 +147,24 @@ export default function GlobalSearchModal() {
 
               {/* Circles Matches */}
               {filteredCircles.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    <Users className="w-3.5 h-3.5 text-brand-500" />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400">
+                    <Users className="w-3.5 h-3.5" />
                     <span>Circles ({filteredCircles.length})</span>
                   </div>
                   <div className="space-y-1">
-                    {filteredCircles.map((c) => (
+                    {filteredCircles.slice(0, 4).map((c) => (
                       <Link
                         key={c.id}
                         href={`/circles/${c.id}`}
                         onClick={() => setIsSearchModalOpen(false)}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        className="p-3 rounded-2xl glass-subtle hover:bg-brand-500/10 flex items-center justify-between transition-colors group"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{c.name}</p>
-                          <p className="text-xs text-slate-500">
-                            {c.category} • {c.members.length} members ({c.members.map((m) => m.name).join(', ')})
-                          </p>
+                          <p className="text-xs font-black text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400">{c.name}</p>
+                          <p className="text-[11px] text-slate-400 font-medium">{c.members.length} members • {c.category}</p>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-slate-400" />
+                        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                       </Link>
                     ))}
                   </div>
@@ -186,50 +173,29 @@ export default function GlobalSearchModal() {
 
               {/* Accounts Matches */}
               {filteredAccounts.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400">
                     <Building2 className="w-3.5 h-3.5" />
                     <span>Accounts ({filteredAccounts.length})</span>
                   </div>
                   <div className="space-y-1">
-                    {filteredAccounts.map((a) => (
+                    {filteredAccounts.slice(0, 4).map((a) => (
                       <Link
                         key={a.id}
                         href="/accounts"
                         onClick={() => setIsSearchModalOpen(false)}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        className="p-2.5 rounded-2xl glass-subtle hover:bg-brand-500/10 flex items-center justify-between transition-colors group"
                       >
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{a.name}</p>
-                          <p className="text-xs text-slate-500">{a.bankName || a.type}</p>
+                        <div className="flex items-center gap-2.5">
+                          <BankLogo bankName={a.bankName} accountName={a.name} accountType={a.type} size="sm" customColor={a.color} />
+                          <div>
+                            <p className="text-xs font-black text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400">{a.name}</p>
+                            <p className="text-[11px] text-slate-400 font-medium capitalize">{a.bankName || a.type}</p>
+                          </div>
                         </div>
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">₹{a.currentBalance}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Credit Cards Matches */}
-              {filteredCreditCards.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Credit Cards ({filteredCreditCards.length})</span>
-                  </div>
-                  <div className="space-y-1">
-                    {filteredCreditCards.map((cc) => (
-                      <Link
-                        key={cc.id}
-                        href="/credit-cards"
-                        onClick={() => setIsSearchModalOpen(false)}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{cc.cardName}</p>
-                          <p className="text-xs text-slate-500">{cc.bank} • •••• {cc.last4Digits}</p>
-                        </div>
-                        <span className="font-bold text-sm text-rose-600">Outstanding: ₹{cc.currentOutstanding}</span>
+                        <span className="font-black text-xs text-slate-900 dark:text-white">
+                          ₹{a.currentBalance.toLocaleString('en-IN')}
+                        </span>
                       </Link>
                     ))}
                   </div>

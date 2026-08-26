@@ -119,34 +119,100 @@ export interface SimplifiedDebt {
   amount: number;
 }
 
+export type CardNetwork = 'Visa' | 'Mastercard' | 'American Express' | 'RuPay' | 'Other';
+export type CardStatus = 'Active' | 'Blocked' | 'Closed' | 'Archived';
+export type CardRewardType = 'None' | 'Cashback' | 'Reward Points' | 'Miles' | 'Other';
+export type StatementStatus = 'Upcoming' | 'Due' | 'Partially Paid' | 'Paid' | 'Overdue';
+export type CardPaymentType = 'minimum' | 'statement' | 'full' | 'custom';
+export type EMIType = 'No-cost EMI' | 'Regular EMI';
+export type EMIStatus = 'Active' | 'Completed' | 'Cancelled' | 'Preclosed';
+
 export interface CreditCard {
   id: string;
   userId: string;
   cardName: string;
   bank: string;
   last4Digits: string;
+  network?: CardNetwork;
   creditLimit: number;
+  currentOutstanding: number;
+  statementBalance?: number;
+  minimumDue: number;
   statementDate: number; // Day of month 1-31
   paymentDueDate: number; // Day of month 1-31
-  annualFee: number;
-  currentOutstanding: number;
+  interestRate?: number; // Annual % APR e.g. 42
+  annualFee?: number;
+  rewardType?: CardRewardType;
+  rewardRate?: string; // e.g. "5% on Amazon" or "2 pts / ₹100"
+  status?: CardStatus;
+  cardColor?: string;
+  cardTheme?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreditCardStatement {
+  id: string;
+  cardId: string;
+  statementDate: string; // YYYY-MM-DD or Month name
+  billingPeriodStart: string;
+  billingPeriodEnd: string;
+  statementAmount: number;
   minimumDue: number;
-  cardColor: string;
+  paymentDueDate: string;
+  paidAmount: number;
+  status: StatementStatus;
+  createdAt?: string;
+}
+
+export interface CreditCardPayment {
+  id: string;
+  cardId: string;
+  statementId?: string;
+  accountId?: string;
+  amount: number;
+  paymentDate: string;
+  paymentType: CardPaymentType;
+  transactionId?: string;
+  notes?: string;
+  createdAt?: string;
 }
 
 export interface EMI {
   id: string;
   cardId: string;
+  transactionId?: string;
   title: string;
+  purchaseTitle?: string;
   purchaseAmount: number;
-  downPayment: number;
+  downPayment?: number;
   principalAmount: number;
+  interestAmount?: number;
+  processingFee?: number;
+  taxAmount?: number;
+  totalPayable?: number;
+  monthlyEmi?: number;
+  emiAmount: number;
   tenureMonths: number;
   paidMonths: number;
-  emiAmount: number;
+  paidInstallments?: number;
+  remainingInstallments?: number;
   interestRate: number;
+  emiType?: EMIType;
+  startDate?: string;
+  firstDueDate?: string;
   nextDueDate: string;
+  status?: EMIStatus;
   createdAt: string;
+}
+
+export interface EMIInstallment {
+  installmentNumber: number;
+  dueDate: string;
+  emiAmount: number;
+  principal: number;
+  interest: number;
+  status: 'Paid' | 'Upcoming' | 'Due' | 'Overdue' | 'Skipped';
 }
 
 export interface Loan {

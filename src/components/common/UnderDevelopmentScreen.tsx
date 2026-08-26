@@ -58,184 +58,123 @@ export default function UnderDevelopmentScreen({
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* 1. Header Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 border border-brand-500/20 p-6 sm:p-10 text-white shadow-2xl">
-        {/* Glowing atmospheric circles */}
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="space-y-8 animate-fadeIn max-w-4xl mx-auto">
+      {/* 1. Hero Feature Banner */}
+      <div className="relative overflow-hidden p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-brand-950/80 via-slate-900/80 to-indigo-950/80 text-white shadow-2xl border border-white/15 backdrop-blur-2xl">
+        <div className="absolute -top-24 -right-24 w-60 h-60 bg-brand-500/25 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-extrabold uppercase tracking-wider animate-pulse">
+        <div className="relative z-10 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-500/30 backdrop-blur-md">
+              {category}
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 backdrop-blur-md">
               <Flame className="w-3.5 h-3.5 text-amber-400" />
-              <span>Under Active Development • Coming Soon</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-brand-600/40 border border-brand-400/30 flex items-center justify-center text-brand-300 shadow-inner">
-                <Icon className="w-6 h-6" />
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-                {featureName}
-              </h1>
-            </div>
-
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              {tagline}
-            </p>
+              <span>In Active Build</span>
+            </span>
           </div>
 
-          {/* Development Status Metric Card */}
-          <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-5 sm:p-6 min-w-[260px] space-y-4 shrink-0 shadow-lg">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-semibold uppercase tracking-wider">Flight Progress</span>
-              <span className="font-mono font-bold text-amber-400">{progressPercent}% Ready</span>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-xl shadow-brand-500/30 border border-white/25 shrink-0">
+              <Icon className="w-7 h-7 text-white" />
             </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{featureName}</h1>
+              <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1 max-w-xl leading-relaxed">{tagline}</p>
+            </div>
+          </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5">
+          {/* Build Completion Progress */}
+          <div className="pt-2 max-w-md space-y-2">
+            <div className="flex justify-between text-xs font-bold text-slate-300">
+              <span>Engineering Progress</span>
+              <span className="text-brand-300 font-extrabold">{progressPercent}% Completed</span>
+            </div>
+            <div className="w-full h-3 rounded-full bg-white/15 overflow-hidden p-0.5 backdrop-blur-md">
               <div
-                className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-1000 ease-out shadow-sm shadow-emerald-400/50"
+                className="h-full rounded-full bg-gradient-to-r from-brand-400 via-indigo-400 to-purple-400 transition-all duration-1000 shadow-sm"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-
-            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Clock className="w-3.5 h-3.5 text-brand-400" />
-                <span>Target: {plannedRelease}</span>
-              </span>
-              <span className="font-bold text-emerald-400 uppercase">Beta Testing</span>
-            </div>
+            <p className="text-[11px] text-slate-400 font-medium">Target Rollout: <span className="text-white font-bold">{plannedRelease}</span></p>
           </div>
         </div>
       </div>
 
-      {/* 2. Feature Highlights Grid */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-            What&apos;s Coming in {featureName}
+      {/* 2. Feature Architecture Highlights */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-brand-500" />
+          <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            What We Are Crafting For You
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {highlights.map((item, idx) => {
-            const ItemIcon = item.icon;
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {highlights.map((h, idx) => {
+            const HIcon = h.icon;
             return (
-              <div
-                key={idx}
-                className="glass-panel p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800 space-y-3 hover:border-brand-500/40 transition-all hover:shadow-lg group"
-              >
+              <div key={idx} className="glass-card glass-interactive p-6 rounded-3xl space-y-3 shadow-xl">
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <ItemIcon className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-500/30 shadow-inner">
+                    <HIcon className="w-5 h-5" />
                   </div>
-                  {item.badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                      {item.badge}
+                  {h.badge && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-200/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-300/40 dark:border-white/5">
+                      {h.badge}
                     </span>
                   )}
                 </div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  {item.description}
-                </p>
+                <h3 className="font-black text-base text-slate-900 dark:text-white leading-snug">{h.title}</h3>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">{h.description}</p>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* 3. Interactive Notification & Beta Testing Call-To-Action */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Card A: Join Beta Flight to Test Now */}
-        <div className="glass-panel p-6 rounded-3xl border-amber-200/60 dark:border-amber-900/60 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/20 dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-900 space-y-4">
-          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-bold text-sm uppercase tracking-wide">
-            <Zap className="w-4 h-4 text-amber-500" />
-            <span>Early Access in Beta Flight</span>
-          </div>
+      {/* 3. Notification & Dev Bypass Bar */}
+      <div className="glass-card p-6 sm:p-7 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+        <div className="space-y-1 text-center sm:text-left">
+          <h3 className="font-black text-slate-900 dark:text-white text-base">Get Early Access Notification</h3>
+          <p className="text-xs text-slate-400 font-medium">Be the first to test when this module drops in Beta Flight.</p>
+        </div>
 
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-            Want to test this feature right now?
-          </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            This feature is actively functional on our private <strong>Beta Flight Channel</strong>. If you are an invited tester or developer, you can test it on our beta branch deploy.
-          </p>
-
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            {childrenIfBypassed && (
-              <button
-                onClick={() => setShowSneakPeek(!showSneakPeek)}
-                className="px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
-              >
-                <Code2 className="w-4 h-4 text-amber-400" />
-                <span>{showSneakPeek ? 'Hide Preview Interface' : 'Preview Working Beta Interface'}</span>
-              </button>
-            )}
-
-            <a
-              href="mailto:christinkoshy1998@gmail.com?subject=KhataKithab%20Beta%20Tester%20Invite"
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
+        {isNotified ? (
+          <span className="px-4 py-2 rounded-2xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4" /> You're on the VIP list!
+          </span>
+        ) : (
+          <form onSubmit={handleNotifyMe} className="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              type="email"
+              placeholder="Enter email for drop alert..."
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              className="px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none w-full sm:w-64"
+              required
+            />
+            <button
+              type="submit"
+              className="px-4 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md shadow-brand-500/25 transition-all shrink-0 cursor-pointer"
             >
-              <Rocket className="w-4 h-4" />
-              <span>Request Beta Tester Key</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Card B: Launch Alert Notification */}
-        <div className="glass-panel p-6 rounded-3xl space-y-4">
-          <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400 font-bold text-sm uppercase tracking-wide">
-            <Bell className="w-4 h-4" />
-            <span>Release Notifications</span>
-          </div>
-
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-            Get notified when {featureName} goes live
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Leave your email and we&apos;ll ping you as soon as this feature lands on the production branch.
-          </p>
-
-          {isNotified ? (
-            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300 font-medium animate-fadeIn">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span>You&apos;re on the early access list! We will notify you upon launch.</span>
-            </div>
-          ) : (
-            <form onSubmit={handleNotifyMe} className="flex gap-2">
-              <input
-                type="email"
-                required
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="Enter your email..."
-                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-600/20 transition-all shrink-0"
-              >
-                Notify Me
-              </button>
-            </form>
-          )}
-        </div>
+              Notify Me
+            </button>
+          </form>
+        )}
       </div>
 
-      {/* 4. Optional Working Beta Interface (when toggled or bypassed) */}
-      {showSneakPeek && childrenIfBypassed && (
-        <div className="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4 animate-fadeIn">
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-3 rounded-xl border border-amber-200 dark:border-amber-800">
-            <ShieldAlert className="w-4 h-4 shrink-0" />
-            <span>Interactive Beta Preview Mode — Data will be saved to your local ledger or cloud account.</span>
-          </div>
-          {childrenIfBypassed}
+      {/* Dev Sneak Peek Toggle */}
+      {childrenIfBypassed && (
+        <div className="pt-4 border-t border-slate-200/50 dark:border-white/10 text-center">
+          <button
+            onClick={() => setShowSneakPeek(!showSneakPeek)}
+            className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-bold"
+          >
+            {showSneakPeek ? 'Hide Preview Module' : '⚡ Developer Sneak Peek (Simulated Prototype)'}
+          </button>
+          {showSneakPeek && <div className="mt-6 text-left">{childrenIfBypassed}</div>}
         </div>
       )}
     </div>

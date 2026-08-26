@@ -32,10 +32,7 @@ export default function RemindersPage() {
     accounts,
     addTransaction,
     user,
-    isDevMode,
-    browserNotificationPermission,
-    requestBrowserNotificationPermission,
-    sendBrowserNotification
+    isDevMode
   } = useData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -77,10 +74,8 @@ export default function RemindersPage() {
     e.preventDefault();
     if (!payingReminder) return;
 
-    // 1. Mark paid
     markReminderPaid(payingReminder.id);
 
-    // 2. If recordInLedger is checked, debit the selected account
     if (recordInLedger && payAccountId) {
       addTransaction({
         userId: user.id,
@@ -159,60 +154,36 @@ export default function RemindersPage() {
     return true;
   });
 
-  const reminderHighlights = [
-    {
-      title: 'Smart Bill & Due Date Radar',
-      description: 'Centralizes credit card statement dates, payment dues, EMIs, house rent, and utility bills in one unified calendar.',
-      icon: Calendar,
-      badge: 'Core'
-    },
-    {
-      title: 'Browser & Mobile Push Notifications',
-      description: 'Firebase Cloud Messaging (FCM) push alerts sent 3 days, 1 day, and on the morning of bill due dates.',
-      icon: Smartphone,
-      badge: 'Cloud'
-    },
-    {
-      title: 'Recurring Cadence Automation',
-      description: 'Set monthly, weekly, quarterly, or annual recurrence so subscriptions roll over automatically upon payment.',
-      icon: Repeat,
-      badge: 'Automated'
-    },
-    {
-      title: 'Credit Card Minimum vs Full Due Tracking',
-      description: 'Integrates with card billing cycles to highlight interest-free grace periods and prevent late payment penalty fees.',
-      icon: CreditCard,
-      badge: 'Upcoming'
-    }
-  ];
-
-  const mainRemindersContent = (
-    <div className="space-y-6">
+  return (
+    <div className="space-y-8 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <Bell className="w-8 h-8 text-brand-600" />
-            <span>Bill & Payment Reminders</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20 mb-2">
+            <Bell className="w-3.5 h-3.5" />
+            <span>Due Dates & Subscriptions</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Bill & Payment Reminders
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Never miss a Credit Card bill, Rent payment, EMI, or Subscription renewal.
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            Never miss credit card bills, house rent, EMIs, or recurring subscription renewals.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={handleTestAlarm}
-            className="px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-all"
+            className="px-4 py-2.5 rounded-2xl glass-subtle hover:bg-white/70 dark:hover:bg-slate-800/70 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
             title="Test notification sound & alarm"
           >
-            <BellRing className="w-4 h-4 text-brand-600" />
+            <BellRing className="w-4 h-4 text-brand-500" />
             <span>Test Alarm</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-lg shadow-brand-600/30 flex items-center gap-1.5 active:scale-95 transition-all"
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-brand-500/25 flex items-center gap-2 active:scale-95 transition-all border border-white/20 glass-shimmer cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Reminder</span>
@@ -231,10 +202,10 @@ export default function RemindersPage() {
           <button
             key={tab.id}
             onClick={() => setActiveFilter(tab.id as any)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
+            className={`px-4 py-2 rounded-2xl text-xs font-extrabold shrink-0 transition-all cursor-pointer ${
               activeFilter === tab.id
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                : 'bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30 border border-white/20'
+                : 'glass-subtle text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800/60'
             }`}
           >
             {tab.label}
@@ -243,15 +214,15 @@ export default function RemindersPage() {
       </div>
 
       {/* Reminders List */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filteredReminders.length === 0 ? (
-          <div className="glass-panel p-12 text-center rounded-3xl space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-600 flex items-center justify-center mx-auto">
-              <Check className="w-6 h-6" />
+          <div className="glass-card p-16 text-center rounded-3xl space-y-3 shadow-2xl">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/30 shadow-inner">
+              <Check className="w-7 h-7" />
             </div>
-            <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No reminders in this filter</p>
-            <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              You're completely on schedule with all your bills and payments!
+            <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-200">No reminders in this filter</h3>
+            <p className="text-xs text-slate-400 max-w-xs mx-auto font-medium">
+              You are completely on schedule with all your bills and payments!
             </p>
           </div>
         ) : (
@@ -261,49 +232,49 @@ export default function RemindersPage() {
             return (
               <div
                 key={rem.id}
-                className={`glass-panel p-5 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border transition-all ${
+                className={`glass-card glass-interactive p-5 sm:p-6 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl transition-all ${
                   rem.status === 'paid'
-                    ? 'opacity-60 bg-emerald-500/5 border-emerald-500/30'
+                    ? 'opacity-65 bg-emerald-500/5 border-emerald-500/25'
                     : dueInfo.isOverdue
-                    ? 'bg-rose-500/5 border-rose-500/40'
+                    ? 'bg-rose-500/5 border-rose-500/35'
                     : dueInfo.isDueToday
-                    ? 'bg-amber-500/5 border-amber-500/40'
-                    : 'border-slate-200/60 dark:border-slate-800'
+                    ? 'bg-amber-500/5 border-amber-500/35'
+                    : 'border-white/20'
                 }`}
               >
                 <div className="flex items-center gap-4">
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base shrink-0 ${
+                    className={`w-13 h-13 rounded-2xl flex items-center justify-center font-bold text-base shrink-0 shadow-inner ${
                       rem.status === 'paid'
-                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600'
+                        ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
                         : dueInfo.isOverdue
-                        ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-600'
+                        ? 'bg-rose-500/20 text-rose-600 border border-rose-500/30'
                         : dueInfo.isDueToday
-                        ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 animate-pulse'
-                        : 'bg-brand-100 dark:bg-brand-950/60 text-brand-600'
+                        ? 'bg-amber-500/20 text-amber-600 border border-amber-500/30 animate-pulse'
+                        : 'bg-brand-500/20 text-brand-600 border border-brand-500/30'
                     }`}
                   >
                     <Calendar className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-base text-slate-900 dark:text-white">{rem.title}</h3>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h3 className="font-black text-base text-slate-900 dark:text-white leading-snug">{rem.title}</h3>
                       <span
-                        className={`px-2 py-0.2 rounded-full text-[10px] font-extrabold uppercase ${
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                           rem.status === 'paid'
-                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600'
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
                             : dueInfo.isOverdue
-                            ? 'bg-rose-100 dark:bg-rose-950 text-rose-600'
+                            ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'
                             : dueInfo.isDueToday
-                            ? 'bg-amber-100 dark:bg-amber-950 text-amber-600'
-                            : 'bg-brand-50 dark:bg-brand-950 text-brand-600'
+                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                            : 'bg-brand-500/15 text-brand-700 dark:text-brand-300 border-brand-500/30'
                         }`}
                       >
                         {dueInfo.label}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap">
-                      <span className="font-semibold text-brand-600 dark:text-brand-400">{rem.category}</span>
+                    <div className="flex items-center gap-2 text-xs text-slate-400 mt-1 flex-wrap font-medium">
+                      <span className="font-bold text-brand-600 dark:text-brand-400">{rem.category}</span>
                       <span>•</span>
                       <span>Due: {rem.dueDate}</span>
                       <span>•</span>
@@ -312,24 +283,24 @@ export default function RemindersPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-200/50 dark:border-white/5">
                   <div className="text-left sm:text-right">
-                    <span className="font-extrabold text-lg text-slate-900 dark:text-white">
+                    <span className="font-black text-lg sm:text-xl text-slate-900 dark:text-white">
                       {formatCurrency(rem.amount)}
                     </span>
                   </div>
 
                   {rem.status === 'paid' ? (
-                    <span className="px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 text-xs font-bold flex items-center gap-1">
+                    <span className="px-3.5 py-2 rounded-2xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black flex items-center gap-1.5">
                       <Check className="w-4 h-4" /> Paid
                     </span>
                   ) : (
                     <button
                       onClick={() => setPayingReminder(rem)}
-                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center gap-1"
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md shadow-emerald-600/25 transition-all active:scale-95 flex items-center gap-1.5 border border-white/20 cursor-pointer"
                     >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Pay & Record</span>
+                      <Check className="w-4 h-4" />
+                      <span>Pay & Settle</span>
                     </button>
                   )}
                 </div>
@@ -341,37 +312,40 @@ export default function RemindersPage() {
 
       {/* Pay & Ledger Debit Modal */}
       {payingReminder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setPayingReminder(null)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl z-10 border border-slate-100 dark:border-slate-800 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-emerald-600" />
-              <span>Confirm Bill Payment</span>
-            </h3>
-
-            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
-              <p className="text-xs text-slate-500">Bill Details</p>
-              <p className="font-bold text-slate-900 dark:text-white text-sm">{payingReminder.title}</p>
-              <p className="text-lg font-black text-emerald-600">{formatCurrency(payingReminder.amount)}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setPayingReminder(null)} />
+          <div className="relative w-full max-w-md glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl p-6 sm:p-7 shadow-2xl z-10 border border-white/40 dark:border-white/10 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-white/10">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-emerald-600" />
+                <span>Confirm Bill Payment</span>
+              </h3>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">Settlement</span>
             </div>
 
-            <form onSubmit={handleConfirmPayment} className="space-y-3">
-              <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-2">
-                <label className="flex items-center gap-2 text-xs font-bold text-emerald-900 dark:text-emerald-200 cursor-pointer">
+            <div className="p-4 rounded-2xl glass-subtle space-y-1">
+              <p className="text-xs text-slate-400 font-medium">Bill Details</p>
+              <p className="font-black text-slate-900 dark:text-white text-sm">{payingReminder.title}</p>
+              <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{formatCurrency(payingReminder.amount)}</p>
+            </div>
+
+            <form onSubmit={handleConfirmPayment} className="space-y-4">
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2.5">
+                <label className="flex items-center gap-2.5 text-xs font-black text-emerald-900 dark:text-emerald-200 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={recordInLedger}
                     onChange={(e) => setRecordInLedger(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 accent-emerald-600"
                   />
-                  <span>Deduct from My Account & Log in Transactions</span>
+                  <span>Deduct from account & record in transactions</span>
                 </label>
 
                 {recordInLedger && accounts.length > 0 && (
                   <select
                     value={payAccountId}
                     onChange={(e) => setPayAccountId(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
                   >
                     {accounts.map((acc) => (
                       <option key={acc.id} value={acc.id}>
@@ -382,17 +356,17 @@ export default function RemindersPage() {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setPayingReminder(null)}
-                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold text-slate-600 dark:text-slate-300"
+                  className="flex-1 py-3 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md active:scale-95 transition-all"
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-black shadow-lg shadow-emerald-500/25 border border-white/20 cursor-pointer hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
                 >
                   Complete Payment
                 </button>
@@ -404,54 +378,57 @@ export default function RemindersPage() {
 
       {/* Add Reminder Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl z-10 border space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Reminder</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setIsAddModalOpen(false)} />
+          <div className="relative w-full max-w-md glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl p-6 sm:p-7 shadow-2xl z-10 border border-white/40 dark:border-white/10 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-white/10">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Add Reminder</h3>
+              <span className="text-xs text-brand-600 dark:text-brand-400 font-bold">Due Calendar</span>
+            </div>
 
-            <form onSubmit={handleCreateReminder} className="space-y-3">
+            <form onSubmit={handleCreateReminder} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Reminder Title</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Reminder Title</label>
                 <input
                   type="text"
-                  placeholder="e.g. Credit Card Bill, Rent, Netflix"
+                  placeholder="e.g. Credit Card Bill, Rent, Netflix, Electricity"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-sm"
+                  className="w-full px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Amount (₹)</label>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Amount (₹)</label>
                   <input
                     type="number"
                     placeholder="2500"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-sm font-bold"
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-sm font-black text-slate-900 dark:text-white focus:outline-none"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Due Date</label>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Due Date</label>
                   <input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-sm"
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Recurrence</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Recurrence</label>
                 <select
                   value={recurrence}
                   onChange={(e) => setRecurrence(e.target.value as RecurrenceType)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium"
+                  className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
                 >
                   <option value="monthly">Monthly</option>
                   <option value="weekly">Weekly</option>
@@ -460,11 +437,18 @@ export default function RemindersPage() {
                 </select>
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 py-2.5 rounded-xl border text-xs font-bold">
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 py-3 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-md">
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white text-xs font-black shadow-lg shadow-brand-500/25 border border-white/20 cursor-pointer hover:from-brand-500 hover:to-indigo-500 active:scale-95 transition-all"
+                >
                   Save Reminder
                 </button>
               </div>
@@ -474,8 +458,4 @@ export default function RemindersPage() {
       )}
     </div>
   );
-
-  return mainRemindersContent;
 }
-
-

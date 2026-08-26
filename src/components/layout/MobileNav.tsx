@@ -12,7 +12,8 @@ import {
   X,
   Plus,
   Wallet,
-  LogOut
+  LogOut,
+  Sparkles
 } from 'lucide-react';
 import { NAV_ITEMS } from './Sidebar';
 import { useData } from '@/context/DataContext';
@@ -21,9 +22,10 @@ import { APP_INFO } from '@/lib/constants';
 interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpen?: () => void;
 }
 
-export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
+export default function MobileNav({ isOpen, onClose, onOpen }: MobileNavProps) {
   const pathname = usePathname();
   const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout, isDevMode } = useData();
 
@@ -34,79 +36,87 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
     { label: 'Accounts', href: '/accounts', icon: Building2 },
   ];
 
+  const handleMoreClick = () => {
+    if (isOpen) {
+      onClose();
+    } else if (onOpen) {
+      onOpen();
+    }
+  };
+
   return (
     <>
       {/* Sliding Mobile Drawer Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-          <div className="fixed inset-y-0 left-0 w-4/5 max-w-xs bg-white dark:bg-slate-900 p-6 flex flex-col justify-between shadow-2xl transition-transform">
+        <div className="fixed inset-0 z-50 lg:hidden animate-fadeIn">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onClose} />
+          <div className="fixed inset-y-0 left-0 w-4/5 max-w-xs glass-panel bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl p-6 flex flex-col justify-between shadow-2xl transition-transform border-r border-slate-200/50 dark:border-white/10">
             <div>
-              <div className="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-6 border-b border-slate-200/50 dark:border-white/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-brand-500/25 border border-white/20">
                     <Wallet className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <h2 className="font-black text-slate-900 dark:text-white flex items-center gap-1.5 leading-none">
                       <span>KhataKithab</span>
                       {APP_INFO.isDev ? (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300/60">
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400/40">
                           DEV
                         </span>
                       ) : APP_INFO.isBeta ? (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/60">
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40">
                           BETA
                         </span>
                       ) : null}
                     </h2>
-                    <p className="text-xs text-brand-600 dark:text-brand-400">Personal & Circles</p>
+                    <span className="text-[10px] text-slate-400 font-semibold">{APP_INFO.version}</span>
                   </div>
                 </div>
-                <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600">
-                  <X className="w-6 h-6" />
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <nav className="mt-6 space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto">
+              {/* Navigation Links in Drawer */}
+              <nav className="mt-6 space-y-1.5 max-h-[calc(100vh-230px)] overflow-y-auto pr-1">
                 {NAV_ITEMS.map((item) => {
                   const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                   const Icon = item.icon;
-                  const isUnderDevInProd = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode && ['/budgets', '/goals'].includes(item.href);
-
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={onClose}
-                      className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-colors ${
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                         isActive
-                          ? 'bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-md shadow-brand-500/25 border border-white/20'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                        <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                         <span>{item.label}</span>
                       </div>
-                      {isUnderDevInProd ? (
-                        <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60">
-                          Soon
-                        </span>
-                      ) : item.badge ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
+                      {item.badge && (
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-brand-500/15 text-brand-700 dark:text-brand-300'
+                        }`}>
                           {item.badge}
                         </span>
-                      ) : null}
+                      )}
                     </Link>
                   );
                 })}
               </nav>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+            <div className="pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   {firebaseUser?.photoURL ? (
                     <img
                       src={firebaseUser.photoURL}
@@ -114,12 +124,12 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center text-xs">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
                       {user.displayName.charAt(0)}
                     </div>
                   )}
                   <div className="text-xs">
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">{user.displayName}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{user.displayName}</p>
                     <p className="text-[10px] text-slate-400 truncate w-24">{user.email}</p>
                   </div>
                 </div>
@@ -130,7 +140,7 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                       logout();
                       onClose();
                     }}
-                    className="p-2 rounded-lg text-rose-600 bg-rose-50 dark:bg-rose-950/40 text-xs font-bold"
+                    className="p-2 rounded-xl text-rose-500 bg-rose-500/10 text-xs font-bold hover:bg-rose-500/20 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -140,7 +150,7 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                       onClose();
                       setIsAuthModalOpen(true);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-sm"
+                    className="px-3 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-sm cursor-pointer"
                   >
                     Sign In
                   </button>
@@ -152,9 +162,9 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                   onClose();
                   setIsQuickAddOpen(true);
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-brand-600 text-white font-semibold shadow-md shadow-brand-600/30"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-brand-500/25 border border-white/20 cursor-pointer"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 <span>Quick Add Expense</span>
               </button>
             </div>
@@ -162,30 +172,32 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
         </div>
       )}
 
-      {/* Bottom Sticky Mobile Navigation Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-2 py-2 flex items-center justify-around shadow-lg">
+      {/* Floating Glass Bottom Dock (Mobile Only) */}
+      <div className="fixed bottom-3 left-4 right-4 z-40 lg:hidden glass-panel bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl rounded-3xl border border-white/40 dark:border-white/10 p-2 flex items-center justify-around shadow-2xl shadow-slate-950/20">
         {primaryMobileNav.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[11px] font-medium transition-colors ${
-                isActive ? 'text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+              className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl text-[11px] font-bold transition-all ${
+                isActive
+                  ? 'bg-brand-500/20 text-brand-700 dark:text-brand-300 border border-brand-500/30'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+              <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-brand-600 dark:text-brand-400 scale-110' : 'text-slate-400'}`} />
               <span>{item.label}</span>
             </Link>
           );
         })}
 
         <button
-          onClick={onClose}
-          className="flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-[11px] font-medium text-slate-500 dark:text-slate-400"
+          onClick={handleMoreClick}
+          className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
         >
-          <MoreHorizontal className="w-5 h-5 text-slate-400" />
+          <MoreHorizontal className="w-4.5 h-4.5 text-slate-400" />
           <span>More</span>
         </button>
       </div>

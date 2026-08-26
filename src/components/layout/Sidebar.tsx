@@ -18,7 +18,8 @@ import {
   Wallet,
   Sparkles,
   Plus,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { APP_INFO } from '@/lib/constants';
@@ -42,46 +43,48 @@ export default function Sidebar() {
   const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout, isDevMode } = useData();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-screen sticky top-0 z-30 select-none">
+    <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200/50 dark:border-white/10 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl h-screen sticky top-0 z-30 select-none shadow-[4px_0_32px_rgba(0,0,0,0.03)] dark:shadow-[4px_0_40px_rgba(0,0,0,0.3)]">
       {/* Brand Header */}
-      <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
+      <div className="p-6 flex items-center justify-between border-b border-slate-200/40 dark:border-white/5">
+        <Link href="/" className="flex items-center gap-3.5 group">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 group-hover:rotate-2 transition-all border border-white/20">
             <Wallet className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>KhataKithab</span>
+            <h1 className="font-black text-lg leading-none tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+              <span className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                KhataKithab
+              </span>
               {APP_INFO.isDev ? (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300/60 dark:border-purple-700/60 shadow-sm">
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400/40 shadow-2xs">
                   DEV
                 </span>
               ) : APP_INFO.isBeta ? (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60">
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40 shadow-2xs">
                   BETA
                 </span>
               ) : null}
             </h1>
-            <span className="text-[11px] font-medium text-brand-600 dark:text-brand-400">
+            <span className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 tracking-tight">
               Personal & Shared Finance
             </span>
           </div>
         </Link>
       </div>
 
-      {/* Sub-10s Quick Add Button */}
+      {/* Quick Add CTA */}
       <div className="px-4 py-4">
         <button
           onClick={() => setIsQuickAddOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-95 text-white font-medium shadow-md shadow-brand-600/30 transition-all"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 hover:from-brand-500 hover:to-indigo-500 active:scale-98 text-white font-bold text-xs shadow-lg shadow-brand-500/25 transition-all border border-white/25 glass-shimmer cursor-pointer"
         >
-          <Plus className="w-5 h-5" />
-          <span>Add Expense</span>
+          <Plus className="w-4 h-4 text-brand-200" />
+          <span>Quick Add Expense</span>
         </button>
       </div>
 
       {/* Main Navigation List */}
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-1.5 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
@@ -91,22 +94,31 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300 font-semibold'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-brand-500/15 dark:bg-brand-500/20 text-brand-700 dark:text-brand-300 font-extrabold shadow-sm border border-brand-500/30 backdrop-blur-md'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                <div
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${
+                    isActive
+                      ? 'bg-brand-500/20 text-brand-600 dark:text-brand-300'
+                      : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-700'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
                 <span>{item.label}</span>
               </div>
+              
               {isUnderDevInProd ? (
-                <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-300/60 dark:border-amber-700/60">
+                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                   Soon
                 </span>
               ) : item.badge ? (
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/20">
                   {item.badge}
                 </span>
               ) : null}
@@ -115,51 +127,53 @@ export default function Sidebar() {
         })}
       </nav>
 
-
       {/* Footer Profile summary & Version Info */}
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+      <div className="p-4 border-t border-slate-200/40 dark:border-white/5 space-y-3 bg-white/20 dark:bg-slate-900/20 backdrop-blur-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {firebaseUser?.photoURL ? (
               <img
                 src={firebaseUser.photoURL}
                 alt={user.displayName}
-                className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                className="w-9 h-9 rounded-full object-cover border border-slate-200/80 dark:border-white/20 shadow-sm"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center text-sm border border-brand-200 dark:border-brand-800">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-md border border-white/20">
                 {user.displayName.charAt(0)}
               </div>
             )}
             <div className="text-xs">
-              <p className="font-semibold text-slate-800 dark:text-slate-200 leading-snug">{user.displayName}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[11px] truncate w-24">{user.email}</p>
+              <p className="font-extrabold text-slate-800 dark:text-slate-200 leading-snug truncate max-w-[110px]">
+                {user.displayName}
+              </p>
+              <p className="text-slate-400 text-[11px] truncate w-24">{user.email}</p>
             </div>
           </div>
+
           {firebaseUser ? (
             <button
               onClick={logout}
               title="Sign Out"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="px-2 py-1 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-bold shadow-sm"
+              className="px-2.5 py-1 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-black shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               Sign In
             </button>
           )}
         </div>
 
-        <div className="pt-2 border-t border-slate-100/60 dark:border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
-          <span className="flex items-center gap-1">
-            <span className={`w-1.5 h-1.5 rounded-full ${firebaseUser ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+        <div className="pt-2 border-t border-slate-200/40 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+          <span className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${firebaseUser ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-amber-500 shadow-sm shadow-amber-500/50'}`} />
             {firebaseUser ? 'Firebase Cloud' : 'Local Storage'}
           </span>
-          <span className="font-mono font-bold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300">
+          <span className="font-mono font-bold bg-slate-200/50 dark:bg-slate-800/60 px-2 py-0.5 rounded-md text-slate-700 dark:text-slate-300 border border-slate-300/40 dark:border-white/5">
             {APP_INFO.version}
           </span>
         </div>

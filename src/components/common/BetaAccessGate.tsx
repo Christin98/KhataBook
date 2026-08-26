@@ -27,20 +27,17 @@ export default function BetaAccessGate({ children }: { children: React.ReactNode
   const isBetaEnvironment = APP_INFO.isBeta || process.env.NEXT_PUBLIC_APP_ENV === 'beta';
 
   useEffect(() => {
-    // If not in beta environment (e.g. Production build), allow unrestricted access
     if (!isBetaEnvironment) {
       setHasAccess(true);
       return;
     }
 
-    // Check if already unlocked via localStorage
     const savedAccess = localStorage.getItem(BETA_STORAGE_KEY);
     if (savedAccess === 'true') {
       setHasAccess(true);
       return;
     }
 
-    // Developer auto-grant
     if (firebaseUser) {
       const devUid = 'kW7ipg0EapgXqDGqNcoYVGeQaC52';
       const devEmail = 'christinkoshy1998@gmail.com';
@@ -80,61 +77,60 @@ export default function BetaAccessGate({ children }: { children: React.ReactNode
     }, 400);
   };
 
-  // Loading state while checking storage
   if (hasAccess === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-300">
+      <div className="min-h-screen flex items-center justify-center bg-[#07090e] text-slate-300">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
           <span className="text-sm font-medium">Verifying flight access...</span>
         </div>
       </div>
     );
   }
 
-  // If granted access or not in beta mode, render children
   if (hasAccess) {
     return <>{children}</>;
   }
 
-  // Render Full-Screen Futuristic Beta Access Lock Gate
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#07090e] text-slate-100 relative overflow-hidden animate-fadeIn">
       {/* Ambient background glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-10 left-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-72 h-72 bg-indigo-500/12 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500/12 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Main Card */}
-        <div className="bg-slate-900/80 backdrop-blur-2xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-950/20 text-center relative">
+        {/* Main Glass Card */}
+        <div className="glass-card bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl text-center relative space-y-5">
           
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-6 animate-pulse">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-black uppercase tracking-wider animate-pulse">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>Early Access Flight • {APP_INFO.version}</span>
           </div>
 
           {/* Logo / App Name */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/30 mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-brand-500/30 border border-white/20">
             <Lock className="w-8 h-8 text-white" />
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            KhataKithab <span className="text-emerald-400">Beta</span>
-          </h1>
-          <p className="text-slate-400 text-sm mt-2 leading-relaxed">
-            This preview release is private and gated for invited testers and developers. Enter your access key to enter.
-          </p>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              KhataKithab <span className="text-brand-400">Beta</span>
+            </h1>
+            <p className="text-slate-400 text-xs mt-1.5 leading-relaxed font-medium">
+              This preview release is private and gated for invited testers and developers. Enter your access key to unlock.
+            </p>
+          </div>
 
           {/* Passcode Form */}
-          <form onSubmit={handleUnlock} className="mt-8 space-y-4 text-left">
+          <form onSubmit={handleUnlock} className="space-y-4 text-left pt-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-black text-slate-300 uppercase tracking-wider mb-2">
                 Beta Passcode / Invite Key
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brand-500">
                   <KeyRound className="w-4 h-4" />
                 </div>
                 <input
@@ -145,12 +141,12 @@ export default function BetaAccessGate({ children }: { children: React.ReactNode
                     if (error) setError(null);
                   }}
                   placeholder="e.g. KHATA-BETA-2026"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-950/70 border border-slate-700/80 rounded-xl text-white font-mono text-sm placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all uppercase"
+                  className="w-full pl-10 pr-4 py-3 glass-input rounded-2xl text-white font-mono text-sm placeholder:text-slate-600 focus:outline-none uppercase font-bold"
                   autoFocus
                 />
               </div>
               {error && (
-                <div className="flex items-center gap-1.5 text-xs text-rose-400 mt-2">
+                <div className="flex items-center gap-1.5 text-xs text-rose-400 mt-2 font-semibold">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{error}</span>
                 </div>
@@ -160,10 +156,10 @@ export default function BetaAccessGate({ children }: { children: React.ReactNode
             <button
               type="submit"
               disabled={isVerifying || isSuccess}
-              className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+              className={`w-full py-3.5 px-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg border border-white/20 cursor-pointer ${
                 isSuccess
                   ? 'bg-emerald-600 text-white shadow-emerald-600/30'
-                  : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-emerald-500/20 active:scale-[0.98]'
+                  : 'bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-brand-500/25 active:scale-[0.98]'
               }`}
             >
               {isSuccess ? (
@@ -183,12 +179,12 @@ export default function BetaAccessGate({ children }: { children: React.ReactNode
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-800" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-slate-900 px-3 text-slate-500 font-medium">or tester login</span>
+              <span className="glass-pill px-3 py-0.5 rounded-full text-slate-500 font-bold text-[10px] uppercase">or tester login</span>
             </div>
           </div>
 
@@ -203,17 +199,17 @@ export default function BetaAccessGate({ children }: { children: React.ReactNode
                   setError(err?.message || 'Authentication failed.');
                 }
               }}
-              className="w-full py-2.5 px-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-2.5 px-4 glass-subtle hover:bg-slate-800/80 rounded-2xl text-xs font-bold text-slate-200 flex items-center justify-center gap-2 transition-colors cursor-pointer border border-white/10"
             >
-              <LogIn className="w-4 h-4 text-emerald-400" />
+              <LogIn className="w-4 h-4 text-brand-400" />
               <span>Sign In with Google (Auto-Unlocks Admins)</span>
             </button>
 
-            <p className="text-[11px] text-slate-500 text-center">
+            <p className="text-[11px] text-slate-500 text-center font-medium">
               Don&apos;t have a code? Contact{' '}
               <a
                 href="mailto:christinkoshy1998@gmail.com?subject=KhataKithab%20Beta%20Access%20Request"
-                className="text-emerald-400 hover:underline font-medium inline-flex items-center gap-0.5"
+                className="text-brand-400 hover:underline font-bold inline-flex items-center gap-0.5"
               >
                 christinkoshy1998@gmail.com
                 <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
@@ -221,8 +217,8 @@ export default function BetaAccessGate({ children }: { children: React.ReactNode
             </p>
           </div>
 
-          {/* Build Info Footer inside Card */}
-          <div className="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500">
+          {/* Build Info Footer */}
+          <div className="pt-4 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-500 font-medium">
             <span className="font-mono">{APP_INFO.versionFull}</span>
             <span>Security Gate v1.0</span>
           </div>
