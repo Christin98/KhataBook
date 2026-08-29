@@ -22,7 +22,7 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
   } = useData();
 
   return (
-    <header className="h-16 glass-header sticky top-0 z-20 px-4 lg:px-8 flex items-center justify-between transition-all">
+    <header className="h-16 lg:h-[76px] glass-header sticky top-0 z-20 px-4 lg:px-8 flex items-center justify-between transition-all">
       {/* Mobile Menu & Title */}
       <div className="flex items-center gap-3 lg:gap-4">
         <button
@@ -42,7 +42,7 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
         >
           <Search className="w-4 h-4 text-brand-500 group-hover:scale-110 transition-transform" />
           <span className="truncate">Search txns, circles, cards...</span>
-          <kbd className="hidden sm:inline-block ml-auto text-[10px] font-mono font-bold bg-slate-200/60 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-lg border border-slate-300/60 dark:border-white/10 shadow-2xs">
+          <kbd className="hidden sm:inline-block ml-auto text-xs font-mono font-bold bg-slate-200/60 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-lg border border-slate-300/60 dark:border-white/10 shadow-2xs">
             ⌘K
           </kbd>
         </button>
@@ -75,24 +75,24 @@ export default function Header({ onOpenMobileNav }: HeaderProps) {
           </span>
         )}
 
-        {/* Quick Add Expense Action Button */}
+        {/* Quick Add Entry Action Button */}
         <button
           onClick={() => setIsQuickAddOpen(true)}
-          className="flex items-center gap-1.5 py-1.5 px-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-brand-500/25 transition-all active:scale-95 border border-white/20 cursor-pointer"
+          className="flex items-center gap-1.5 py-1.5 px-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-brand-500/25 transition-all active:scale-95 border border-white/20 cursor-pointer min-h-[36px]"
         >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Expense</span>
+          <span className="hidden sm:inline">Add Entry</span>
         </button>
 
         {/* Notification Bell */}
         <button
           onClick={() => setIsNotificationDrawerOpen(true)}
-          className="p-2 rounded-2xl text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60 relative transition-all active:scale-95 border border-transparent hover:border-slate-200 dark:hover:border-white/10 cursor-pointer"
+          className="p-2 rounded-2xl text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60 relative transition-all active:scale-95 border border-transparent hover:border-slate-200 dark:hover:border-white/10 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
           title="Notification Center & Alarms"
         >
           <Bell className="w-4.5 h-4.5" />
           {unreadNotificationCount > 0 && (
-            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white font-black text-[10px] flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-md shadow-rose-500/50 animate-pulse">
+            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white font-black text-xs flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-md shadow-rose-500/50 animate-pulse">
               {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
             </span>
           )}

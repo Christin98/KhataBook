@@ -1,12 +1,65 @@
 {
   "prod": [
     {
+      "version": "v0.5.5",
+      "stage": "Production Stable",
+      "date": "2026-08-29",
+      "title": "KhataKithab v0.5.5 - Budgets & Goals Unlocked, Global Period Filters & Financial Integrity",
+      "summary": "Major release unlocking Category Budgets and Savings Goals for all production users, persistent multi-device period selection, real-time savings rate analysis, centralized duplicate transaction detection, and comprehensive financial bounds validation.",
+      "isCurrent": true,
+      "highlights": [
+        "🎯 Production Unlock: Category Budgets & Savings Goals fully available on desktop & mobile",
+        "📅 Global Period Selector: Persistent date range filtering across devices (All time, 1M, 3M, 6M, 1Y)",
+        "📊 Dynamic Savings Rate: Real-time calculation with authentic historical trend indicators",
+        "🛡️ Financial Integrity Engine: Centralized duplicate detection, safe money math, and bounds validation",
+        "✨ Animated Dialog Modals: Replaced browser popups with accessible ConfirmDialog flows"
+      ],
+      "features": [
+        {
+          "title": "Category Budgets System",
+          "description": "Monthly category spending caps with dynamic debit transaction aggregation, interactive SVG Budget Health Ring, real-time warning indicators, and animated adjustment modals.",
+          "tag": "Budgets"
+        },
+        {
+          "title": "Financial Savings Goals",
+          "description": "Target milestone tracking, color-coded goal cards, due dates, notes, and an instant Add Funds deposit modal with live total previews.",
+          "tag": "Goals"
+        },
+        {
+          "title": "Global Date Range Filter",
+          "description": "Seamless global period selection persisted via server /api/preferences and Firestore sync across all user sessions and devices without layout flash.",
+          "tag": "Dashboard"
+        },
+        {
+          "title": "Dynamic Savings Rate Summary Card",
+          "description": "Real-time calculation strip using ((Income - Spending) / Income) * 100 with division protection and authentic month-over-month trend indicators.",
+          "tag": "Analytics"
+        },
+        {
+          "title": "Centralized Duplicate Detection",
+          "description": "SHA-256 transaction fingerprinting preventing accidental duplicate manual and automated entries within 24 hours.",
+          "tag": "Security"
+        },
+        {
+          "title": "Money-Safe Math & Bounds Validation",
+          "description": "Centralized sanitization protecting against NaN, Infinity, negative zero, and unrealistic amounts (> ₹10 Crores) with instant inline error warnings.",
+          "tag": "Core"
+        }
+      ],
+      "fixes": [
+        "Replaced all raw browser confirm/alert popups with animated ConfirmDialog modals",
+        "Eliminated synthetic trend arrows to ensure all comparisons reflect authentic saved history",
+        "Protected reducing balance EMI formulas against singular zero-interest divisions",
+        "Added live input validation feedback and submit protection against unrealistic amounts"
+      ]
+    },
+    {
       "version": "v0.4.0",
       "stage": "Production Stable",
       "date": "2026-08-24",
-      "title": "\"",
-      "summary": "Production release: \"",
-      "isCurrent": true,
+      "title": "KhataKithab v0.4.0 - Reminders Unlocked & Smart Alarms",
+      "summary": "Production release: KhataKithab v0.4.0 - Reminders Unlocked & Smart Alarms",
+      "isCurrent": false,
       "highlights": [
         "🌟 Official Release v0.4.0",
         "⚡ Complete production security & encryption compliance",
@@ -169,12 +222,49 @@
   ],
   "beta": [
     {
+      "version": "v0.5.5-beta.1",
+      "stage": "Beta Flight",
+      "date": "2026-08-29",
+      "title": "Beta Flight v0.5.5-beta.1 - Budgets & Goals Release Candidate",
+      "summary": "Beta candidate flight featuring Category Budgets & Savings Goals, persistent Global Period Filters across devices, Centralized SHA-256 duplicate detection, and live monetary input validation.",
+      "isCurrent": true,
+      "highlights": [
+        "🎯 Unlocked Category Budgets & Financial Savings Goals in navigation",
+        "📅 Global Period Filter with persistent /api/preferences sync",
+        "📊 Dynamic Savings Rate strip with clean zero-division safeguards",
+        "🛡️ Centralized SHA-256 duplicate transaction fingerprinting",
+        "✨ Live input bounds validation protecting against unrealistic amounts (> ₹10 Crores)"
+      ],
+      "features": [
+        {
+          "title": "Category Budgets & Goals Modules",
+          "description": "Interactive monthly budget caps, SVG health score rings, milestone progress tracking, and Add Funds deposit workflows.",
+          "tag": "Beta Flight"
+        },
+        {
+          "title": "Global Date Range Filter",
+          "description": "Persistent date period filtering synced across devices without initial state hydration flashes.",
+          "tag": "Dashboard"
+        },
+        {
+          "title": "Financial Math & Bounds Verification",
+          "description": "Comprehensive money-safe calculation engine guarding against NaN, Infinity, negative zero, and overflow.",
+          "tag": "Security"
+        }
+      ],
+      "fixes": [
+        "Replaced all browser prompt/confirm alerts with custom animated ConfirmDialog modals",
+        "Eliminated synthetic trend arrows across summary cards",
+        "Added live input warnings when typing amounts exceeding realistic limits"
+      ]
+    },
+    {
       "version": "v0.4.0-beta.3",
       "stage": "Beta Flight",
       "date": "2026-08-24",
       "title": "KhataKithab v0.4.0 - Reminders Unlocked & Flight Radar",
       "summary": "Beta candidate build: KhataKithab v0.4.0 - Reminders Unlocked & Flight Radar",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "🚀 Flight release v0.4.0-beta.3",
         "⚡ Verified local compilation & test suites",
@@ -296,12 +386,107 @@
   ],
   "dev": [
     {
+      "version": "v0.5.5-beta.2",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.2",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0000.",
+      "isCurrent": true,
+      "highlights": [
+        "Build v0.5.5-beta.2 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.1",
+      "stage": "Local Dev",
+      "date": "2026-08-29",
+      "title": "Local Dev Build v0.5.5-beta.1",
+      "summary": "Automated build record created on 2026-08-29 at 2026.08.29.2357.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.1 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.2-beta.4",
+      "stage": "Local Dev",
+      "date": "2026-08-29",
+      "title": "Local Dev Build v0.5.2-beta.4",
+      "summary": "Automated build record created on 2026-08-29 at 2026.08.29.2219.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.2-beta.4 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.2-beta.3",
+      "stage": "Local Dev",
+      "date": "2026-08-29",
+      "title": "Local Dev Build v0.5.2-beta.3",
+      "summary": "Automated build record created on 2026-08-29 at 2026.08.29.2203.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.2-beta.3 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.2-beta.2",
+      "stage": "Local Dev",
+      "date": "2026-08-28",
+      "title": "Local Dev Build v0.5.2-beta.2",
+      "summary": "Automated build record created on 2026-08-28 at 2026.08.28.2003.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.2-beta.2 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
       "version": "v0.5.2-beta.1",
       "stage": "Local Dev",
       "date": "2026-08-26",
       "title": "Local Dev Build v0.5.2-beta.1",
       "summary": "Automated build record created on 2026-08-26 at 2026.08.26.2352.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "Build v0.5.2-beta.1 (Local Dev)",
         "Automated changelog preservation"

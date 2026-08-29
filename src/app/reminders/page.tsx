@@ -120,8 +120,6 @@ export default function RemindersPage() {
       } catch (err) {
         console.error('Notification error:', err);
       }
-    } else {
-      alert('Browser notifications are not supported on this browser or platform.');
     }
   };
 

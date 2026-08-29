@@ -18,7 +18,8 @@ import {
   Goal,
   Reminder,
   AppNotification,
-  NotificationType
+  NotificationType,
+  DatePeriod
 } from '@/lib/types';
 import { APP_INFO } from '@/lib/constants';
 import {
@@ -40,6 +41,22 @@ import {
   seedUserSampleData
 } from '@/lib/firebaseSync';
 import { deriveKey } from '@/lib/encryption';
+import {
+  generateTransactionFingerprint,
+  checkDuplicateTransaction,
+  DuplicateTransactionError,
+  checkFirestoreFingerprintConstraint,
+  saveFirestoreFingerprintConstraint,
+  deleteFirestoreFingerprintConstraint
+} from '@/lib/duplicateDetection';
+import {
+  safeRound,
+  toSafeMoney,
+  toSafeSignedMoney,
+  toSafePercentage,
+  toSafeTenure,
+  toSafeInterestRate
+} from '@/lib/moneySafe';
 import {
   SAMPLE_USER,
   SAMPLE_ACCOUNTS,
@@ -92,6 +109,12 @@ interface DataContextType {
   setIsNotificationDrawerOpen: (open: boolean) => void;
   isWhatsNewOpen: boolean;
   setIsWhatsNewOpen: (open: boolean) => void;
+
+  // Global Date Period Preferences
+  selectedPeriod: DatePeriod;
+  setSelectedPeriod: (period: DatePeriod) => Promise<boolean>;
+  preferencesError: string | null;
+  setPreferencesError: (err: string | null) => void;
   
   // Notification Center
   notifications: AppNotification[];
@@ -111,7 +134,10 @@ interface DataContextType {
   logout: () => Promise<void>;
 
   // Data Handlers
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  addTransaction: (
+    transaction: Omit<Transaction, 'id' | 'createdAt'>,
+    options?: { allowDuplicate?: boolean }
+  ) => Promise<void>;
   deleteTransaction: (id: string) => void;
   addCategory: (categoryName: string, type?: 'expense' | 'income') => void;
   addAccount: (account: Omit<Account, 'id'>) => void;
@@ -146,8 +172,11 @@ interface DataContextType {
 
   addLoan: (loan: Omit<Loan, 'id'>) => void;
   addBudget: (budget: Omit<Budget, 'id' | 'spent'>) => void;
+  updateBudget: (id: string, updates: Partial<Budget>) => void;
+  deleteBudget: (id: string) => void;
   addGoal: (goal: Omit<Goal, 'id'>) => void;
-  updateGoal: (id: string, currentAmount: number) => void;
+  updateGoal: (id: string, updates: Partial<Goal> | number) => void;
+  deleteGoal: (id: string) => void;
   addReminder: (reminder: Omit<Reminder, 'id'>) => void;
   markReminderPaid: (id: string) => void;
   
@@ -232,6 +261,88 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState<boolean>(false);
   const [isWhatsNewOpen, setIsWhatsNewOpen] = useState<boolean>(false);
 
+  // Global Date Period Preferences (All time on initial launch/when no valid period exists)
+  const [selectedPeriod, setSelectedPeriodState] = useState<DatePeriod>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('khatakithab_selected_period');
+        const validPeriods: DatePeriod[] = ['all_time', 'this_month', 'last_month', 'last_3_months', 'last_6_months', 'this_year'];
+        if (saved && validPeriods.includes(saved as DatePeriod)) {
+          return saved as DatePeriod;
+        }
+      } catch (e) {}
+    }
+    return 'all_time';
+  });
+
+  const [preferencesError, setPreferencesError] = useState<string | null>(null);
+
+  // Function to change and persist selected period
+  const setSelectedPeriod = async (newPeriod: DatePeriod): Promise<boolean> => {
+    const validPeriods: DatePeriod[] = ['all_time', 'this_month', 'last_month', 'last_3_months', 'last_6_months', 'this_year'];
+    const safePeriod: DatePeriod = validPeriods.includes(newPeriod) ? newPeriod : 'all_time';
+    const prevPeriod = selectedPeriod;
+
+    // 1. Recalculate all affected views immediately
+    setSelectedPeriodState(safePeriod);
+    setPreferencesError(null);
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('khatakithab_selected_period', safePeriod);
+      } catch (e) {}
+    }
+
+    // 2. Persist via PUT /api/preferences without resetting any other preference
+    try {
+      const res = await fetch('/api/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datePeriod: safePeriod })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Server rejected preference update');
+      }
+
+      // If user is authenticated, sync with Firestore document
+      if (firebaseUser) {
+        try {
+          await saveUserDoc(
+            firebaseUser.uid,
+            'preferences',
+            'general',
+            {
+              datePeriod: safePeriod,
+              updatedAt: new Date().toISOString()
+            },
+            cryptoKey
+          );
+        } catch (e) {
+          console.warn('Firestore preference save note:', e);
+        }
+      }
+
+      return true;
+    } catch (err: any) {
+      console.error('Failed to persist datePeriod:', err);
+      // 5. If saving fails, restore previously saved selection and show a clear error
+      setSelectedPeriodState(prevPeriod);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('khatakithab_selected_period', prevPeriod);
+        } catch (e) {}
+      }
+      setPreferencesError(`Failed to save period preference: ${err?.message || 'Network error'}. Restored to previous selection.`);
+      setTimeout(() => setPreferencesError(null), 6000);
+      return false;
+    }
+  };
+
   // Notification State
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
@@ -257,6 +368,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (e) {}
     }
+
+    // Load server-persisted preferences in background without jarring layout shift
+    const fetchServerPreferences = async () => {
+      try {
+        const res = await fetch('/api/preferences');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.preferences?.datePeriod) {
+            const validPeriods: DatePeriod[] = ['all_time', 'this_month', 'last_month', 'last_3_months', 'last_6_months', 'this_year'];
+            if (validPeriods.includes(data.preferences.datePeriod)) {
+              setSelectedPeriodState(data.preferences.datePeriod);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('khatakithab_selected_period', data.preferences.datePeriod);
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    };
+    fetchServerPreferences();
   }, []);
   const [cryptoKey, setCryptoKey] = useState<CryptoKey | undefined>(undefined);
 
@@ -324,7 +455,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         subscribeToUserCollection<Loan>(userId, 'loans', setLoans, undefined, cryptoKey),
         subscribeToUserCollection<Budget>(userId, 'budgets', setBudgets, undefined, cryptoKey),
         subscribeToUserCollection<Goal>(userId, 'goals', setGoals, undefined, cryptoKey),
-        subscribeToUserCollection<Reminder>(userId, 'reminders', setReminders, undefined, cryptoKey)
+        subscribeToUserCollection<Reminder>(userId, 'reminders', setReminders, undefined, cryptoKey),
+        subscribeToUserCollection<Record<string, any>>(
+          userId,
+          'preferences',
+          (prefsList) => {
+            const generalPref = prefsList.find((p) => p.id === 'general');
+            if (generalPref?.datePeriod) {
+              const validPeriods: DatePeriod[] = ['all_time', 'this_month', 'last_month', 'last_3_months', 'last_6_months', 'this_year'];
+              if (validPeriods.includes(generalPref.datePeriod as DatePeriod)) {
+                setSelectedPeriodState(generalPref.datePeriod as DatePeriod);
+                if (typeof window !== 'undefined') {
+                  try {
+                    localStorage.setItem('khatakithab_selected_period', generalPref.datePeriod);
+                  } catch (e) {}
+                }
+              }
+            } else if (selectedPeriod) {
+              // Push local session period to newly created Firestore preferences
+              saveUserDoc(
+                userId,
+                'preferences',
+                'general',
+                {
+                  datePeriod: selectedPeriod,
+                  updatedAt: new Date().toISOString()
+                },
+                cryptoKey
+              ).catch(() => {});
+            }
+          },
+          undefined,
+          cryptoKey
+        )
       ];
 
       return () => {
@@ -471,28 +634,64 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setReminders([]);
   };
 
-  // Handlers (Firestore + Local Sync)
-  const addTransaction = async (txnData: Omit<Transaction, 'id' | 'createdAt'>) => {
-    const newTxn: Transaction = {
+  // Handlers (Firestore + Local Sync with Centralized Duplicate Detection)
+  const addTransaction = async (
+    txnData: Omit<Transaction, 'id' | 'createdAt'>,
+    options?: { allowDuplicate?: boolean }
+  ) => {
+    const cleanAmount = toSafeMoney(txnData.amount);
+    const cleanTxnData: Omit<Transaction, 'id' | 'createdAt'> = {
       ...txnData,
-      id: `txn_${Date.now()}`,
+      amount: cleanAmount
+    };
+
+    // 1. Calculate centralized transaction fingerprint
+    const fingerprint = generateTransactionFingerprint(cleanTxnData);
+
+    // 2. Centralized Duplicate Detection: in-memory check unless explicitly allowed
+    if (!options?.allowDuplicate) {
+      const dupCheck = checkDuplicateTransaction(cleanTxnData, transactions);
+      if (dupCheck.isDuplicate) {
+        throw new DuplicateTransactionError(
+          dupCheck.reason || 'A duplicate transaction already exists in this account.',
+          dupCheck.duplicateOf
+        );
+      }
+
+      // 3. Unique Database Constraint: check Firestore fingerprint document when online
+      if (firebaseUser) {
+        const isDbDuplicate = await checkFirestoreFingerprintConstraint(firebaseUser.uid, fingerprint);
+        if (isDbDuplicate) {
+          throw new DuplicateTransactionError(
+            `A duplicate transaction with the same amount (₹${cleanAmount.toLocaleString('en-IN')}) on ${cleanTxnData.date} is already saved in your cloud ledger.`
+          );
+        }
+      }
+    }
+
+    const newTxn: Transaction = {
+      ...cleanTxnData,
+      id: `txn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      fingerprint,
       createdAt: new Date().toISOString()
     };
 
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'transactions', newTxn.id, newTxn, cryptoKey);
+      await saveFirestoreFingerprintConstraint(firebaseUser.uid, fingerprint, newTxn.id);
     } else {
       setTransactions((prev) => [newTxn, ...prev]);
     }
 
     // Update account balances
-    const targetAccount = accounts.find((acc) => acc.id === txnData.accountId);
+    const targetAccount = accounts.find((acc) => acc.id === cleanTxnData.accountId);
     if (targetAccount) {
       let balanceChange = 0;
-      if (txnData.type === 'income') balanceChange = txnData.amount;
-      else if (txnData.type === 'expense' || txnData.type === 'transfer') balanceChange = -txnData.amount;
+      if (cleanTxnData.type === 'income') balanceChange = cleanAmount;
+      else if (cleanTxnData.type === 'expense' || cleanTxnData.type === 'transfer') balanceChange = -cleanAmount;
 
-      const updatedAcc = { ...targetAccount, currentBalance: targetAccount.currentBalance + balanceChange };
+      const currentBal = toSafeSignedMoney(targetAccount.currentBalance);
+      const updatedAcc = { ...targetAccount, currentBalance: safeRound(currentBal + balanceChange) };
       if (firebaseUser) {
         await saveUserDoc(firebaseUser.uid, 'accounts', updatedAcc.id, updatedAcc, cryptoKey);
       } else {
@@ -500,10 +699,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    if (txnData.type === 'transfer' && txnData.toAccountId) {
-      const toAcc = accounts.find((acc) => acc.id === txnData.toAccountId);
+    if (cleanTxnData.type === 'transfer' && cleanTxnData.toAccountId) {
+      const toAcc = accounts.find((acc) => acc.id === cleanTxnData.toAccountId);
       if (toAcc) {
-        const updatedToAcc = { ...toAcc, currentBalance: toAcc.currentBalance + txnData.amount };
+        const toBal = toSafeSignedMoney(toAcc.currentBalance);
+        const updatedToAcc = { ...toAcc, currentBalance: safeRound(toBal + cleanAmount) };
         if (firebaseUser) {
           await saveUserDoc(firebaseUser.uid, 'accounts', updatedToAcc.id, updatedToAcc, cryptoKey);
         } else {
@@ -519,6 +719,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     if (firebaseUser) {
       await deleteUserDoc(firebaseUser.uid, 'transactions', id);
+      const fp = txnToDelete.fingerprint || generateTransactionFingerprint(txnToDelete);
+      await deleteFirestoreFingerprintConstraint(firebaseUser.uid, fp);
     } else {
       setTransactions((prev) => prev.filter((t) => t.id !== id));
     }
@@ -526,11 +728,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     // Revert account balance impact
     const targetAccount = accounts.find((acc) => acc.id === txnToDelete.accountId);
     if (targetAccount) {
+      const cleanAmount = toSafeMoney(txnToDelete.amount);
       let balanceChange = 0;
-      if (txnToDelete.type === 'income') balanceChange = -txnToDelete.amount;
-      else if (txnToDelete.type === 'expense' || txnToDelete.type === 'transfer') balanceChange = txnToDelete.amount;
+      if (txnToDelete.type === 'income') balanceChange = -cleanAmount;
+      else if (txnToDelete.type === 'expense' || txnToDelete.type === 'transfer') balanceChange = cleanAmount;
 
-      const updatedAcc = { ...targetAccount, currentBalance: targetAccount.currentBalance + balanceChange };
+      const currentBal = toSafeSignedMoney(targetAccount.currentBalance);
+      const updatedAcc = { ...targetAccount, currentBalance: safeRound(currentBal + balanceChange) };
       if (firebaseUser) {
         await saveUserDoc(firebaseUser.uid, 'accounts', updatedAcc.id, updatedAcc, cryptoKey);
       } else {
@@ -540,7 +744,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addAccount = async (accData: Omit<Account, 'id'>) => {
-    const newAcc: Account = { ...accData, id: `acc_${Date.now()}` };
+    const cleanCurrentBalance = toSafeSignedMoney(accData.currentBalance);
+    const cleanOpeningBalance = toSafeSignedMoney(accData.openingBalance ?? accData.currentBalance);
+    const newAcc: Account = {
+      ...accData,
+      currentBalance: cleanCurrentBalance,
+      openingBalance: cleanOpeningBalance,
+      id: `acc_${Date.now()}`
+    };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'accounts', newAcc.id, newAcc, cryptoKey);
     } else {
@@ -551,7 +762,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateAccount = async (id: string, updates: Partial<Account>) => {
     const existing = accounts.find((a) => a.id === id);
     if (!existing) return;
-    const updated = { ...existing, ...updates };
+    const cleanUpdates: Partial<Account> = { ...updates };
+    if (updates.currentBalance !== undefined) {
+      cleanUpdates.currentBalance = toSafeSignedMoney(updates.currentBalance);
+    }
+    if (updates.openingBalance !== undefined) {
+      cleanUpdates.openingBalance = toSafeSignedMoney(updates.openingBalance);
+    }
+    const updated = { ...existing, ...cleanUpdates };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'accounts', id, updated, cryptoKey);
     } else {
@@ -586,8 +804,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addCircleExpense = async (expData: Omit<CircleExpense, 'id' | 'createdAt'>) => {
+    const cleanAmount = toSafeMoney(expData.amount);
+    const cleanSplits = (expData.splits || []).map((s) => ({
+      ...s,
+      amount: toSafeMoney(s.amount)
+    }));
+
     const newCExpense: CircleExpense = {
       ...expData,
+      amount: cleanAmount,
+      splits: cleanSplits,
       id: `cexp_${Date.now()}`,
       createdAt: new Date().toISOString()
     };
@@ -600,8 +826,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const circle = circles.find((c) => c.id === expData.circleId);
     if (circle) {
-      const total = circle.totalExpenses + expData.amount;
-      const updatedCircle = { ...circle, totalExpenses: total, outstandingAmount: total - circle.settledAmount };
+      const currentTot = toSafeMoney(circle.totalExpenses);
+      const currentSet = toSafeMoney(circle.settledAmount);
+      const total = safeRound(currentTot + cleanAmount);
+      const updatedCircle = {
+        ...circle,
+        totalExpenses: total,
+        outstandingAmount: safeRound(Math.max(0, total - currentSet))
+      };
       if (firebaseUser) {
         await saveUserDoc(firebaseUser.uid, 'circles', circle.id, updatedCircle, cryptoKey);
       } else {
@@ -611,8 +843,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addSettlement = async (setData: Omit<Settlement, 'id' | 'createdAt'>) => {
+    const cleanAmount = toSafeMoney(setData.amount);
     const newSettlement: Settlement = {
       ...setData,
+      amount: cleanAmount,
       id: `set_${Date.now()}`,
       createdAt: new Date().toISOString()
     };
@@ -625,11 +859,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const circle = circles.find((c) => c.id === setData.circleId);
     if (circle) {
-      const settled = circle.settledAmount + setData.amount;
+      const currentTot = toSafeMoney(circle.totalExpenses);
+      const settled = safeRound(toSafeMoney(circle.settledAmount) + cleanAmount);
       const updatedCircle = {
         ...circle,
         settledAmount: settled,
-        outstandingAmount: Math.max(0, circle.totalExpenses - settled)
+        outstandingAmount: safeRound(Math.max(0, currentTot - settled))
       };
       if (firebaseUser) {
         await saveUserDoc(firebaseUser.uid, 'circles', circle.id, updatedCircle, cryptoKey);
@@ -643,6 +878,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const addCreditCard = async (cardData: Omit<CreditCard, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newCard: CreditCard = {
       ...cardData,
+      creditLimit: toSafeMoney(cardData.creditLimit),
+      currentOutstanding: toSafeMoney(cardData.currentOutstanding),
+      minimumDue: toSafeMoney(cardData.minimumDue),
+      statementBalance: toSafeMoney(cardData.statementBalance),
+      interestRate: toSafeInterestRate(cardData.interestRate),
       id: `cc_${Date.now()}`,
       status: cardData.status || 'Active',
       createdAt: new Date().toISOString(),
@@ -810,10 +1050,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // EMIs
   const addEMI = async (emiData: Omit<EMI, 'id' | 'createdAt'>) => {
-    const tenure = emiData.tenureMonths || 12;
-    const paid = emiData.paidInstallments ?? emiData.paidMonths ?? 0;
+    const tenure = toSafeTenure(emiData.tenureMonths || 12, 1, 120);
+    const paid = Math.min(tenure, toSafeTenure(emiData.paidInstallments ?? emiData.paidMonths ?? 0, 0, 120));
+    const cleanPurchase = toSafeMoney(emiData.purchaseAmount || emiData.principalAmount);
+    const cleanPrincipal = toSafeMoney(emiData.principalAmount || emiData.purchaseAmount);
+    const cleanMonthly = toSafeMoney(emiData.monthlyEmi || emiData.emiAmount);
+    const cleanTotal = toSafeMoney(emiData.totalPayable, safeRound(cleanMonthly * tenure));
+
     const newEMI: EMI = {
       ...emiData,
+      purchaseAmount: cleanPurchase,
+      principalAmount: cleanPrincipal,
+      monthlyEmi: cleanMonthly,
+      emiAmount: cleanMonthly,
+      totalPayable: cleanTotal,
+      downPayment: toSafeMoney(emiData.downPayment),
+      interestRate: toSafeInterestRate(emiData.interestRate),
+      tenureMonths: tenure,
       id: `emi_${Date.now()}`,
       title: emiData.title || emiData.purchaseTitle || 'EMI Purchase',
       purchaseTitle: emiData.purchaseTitle || emiData.title || 'EMI Purchase',
@@ -833,7 +1086,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateEMI = async (id: string, updates: Partial<EMI>) => {
     const emi = emis.find((e) => e.id === id);
     if (!emi) return;
-    const updated = { ...emi, ...updates };
+    const cleanUpdates: Partial<EMI> = { ...updates };
+    if (updates.purchaseAmount !== undefined) cleanUpdates.purchaseAmount = toSafeMoney(updates.purchaseAmount);
+    if (updates.principalAmount !== undefined) cleanUpdates.principalAmount = toSafeMoney(updates.principalAmount);
+    if (updates.monthlyEmi !== undefined) cleanUpdates.monthlyEmi = toSafeMoney(updates.monthlyEmi);
+    if (updates.emiAmount !== undefined) cleanUpdates.emiAmount = toSafeMoney(updates.emiAmount);
+    if (updates.totalPayable !== undefined) cleanUpdates.totalPayable = toSafeMoney(updates.totalPayable);
+    if (updates.interestRate !== undefined) cleanUpdates.interestRate = toSafeInterestRate(updates.interestRate);
+    if (updates.tenureMonths !== undefined) cleanUpdates.tenureMonths = toSafeTenure(updates.tenureMonths, 1, 120);
+
+    const updated = { ...emi, ...cleanUpdates };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'emis', id, updated, cryptoKey);
     } else {
@@ -848,7 +1110,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const currentPaid = emi.paidInstallments ?? emi.paidMonths ?? 0;
     const newPaid = currentPaid + 1;
     const isCompleted = newPaid >= emi.tenureMonths;
-    const emiAmt = emi.monthlyEmi || emi.emiAmount || 0;
+    const emiAmt = toSafeMoney(emi.monthlyEmi || emi.emiAmount);
 
     // Advance next due date by 1 month from firstDueDate or current nextDueDate
     const firstDate = emi.firstDueDate ? new Date(emi.firstDueDate) : new Date();
@@ -874,9 +1136,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (sourceAccountId) {
       const sourceAcc = accounts.find((a) => a.id === sourceAccountId);
       if (sourceAcc) {
+        const curBal = toSafeSignedMoney(sourceAcc.currentBalance);
         const updatedAcc = {
           ...sourceAcc,
-          currentBalance: sourceAcc.currentBalance - emiAmt
+          currentBalance: safeRound(curBal - emiAmt)
         };
         if (firebaseUser) {
           await saveUserDoc(firebaseUser.uid, 'accounts', sourceAcc.id, updatedAcc, cryptoKey);
@@ -908,6 +1171,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const precloseEMI = async (emiId: string, precloseAmount: number, sourceAccountId?: string) => {
     const emi = emis.find((e) => e.id === emiId);
     if (!emi) return;
+    const cleanPreclose = toSafeMoney(precloseAmount);
 
     const updatedEMI: EMI = {
       ...emi,
@@ -923,12 +1187,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setEmis((prev) => prev.map((e) => (e.id === emi.id ? updatedEMI : e)));
     }
 
-    if (sourceAccountId && precloseAmount > 0) {
+    if (sourceAccountId && cleanPreclose > 0) {
       const sourceAcc = accounts.find((a) => a.id === sourceAccountId);
       if (sourceAcc) {
+        const curBal = toSafeSignedMoney(sourceAcc.currentBalance);
         const updatedAcc = {
           ...sourceAcc,
-          currentBalance: sourceAcc.currentBalance - precloseAmount
+          currentBalance: safeRound(curBal - cleanPreclose)
         };
         if (firebaseUser) {
           await saveUserDoc(firebaseUser.uid, 'accounts', sourceAcc.id, updatedAcc, cryptoKey);
@@ -940,7 +1205,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           id: `txn_preclose_${Date.now()}`,
           userId: user.id,
           type: 'transfer',
-          amount: precloseAmount,
+          amount: cleanPreclose,
           category: 'EMI Pre-closure',
           description: `EMI Pre-closure: ${emi.purchaseTitle || emi.title}`,
           date: new Date().toISOString().split('T')[0],
@@ -958,7 +1223,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addLoan = async (loanData: Omit<Loan, 'id'>) => {
-    const newLoan: Loan = { ...loanData, id: `loan_${Date.now()}` };
+    const cleanPrincipal = toSafeMoney(loanData.principal);
+    const cleanOutstanding = toSafeMoney(loanData.outstandingPrincipal ?? cleanPrincipal);
+    const cleanEmi = toSafeMoney(loanData.emiAmount);
+    const cleanRate = toSafeInterestRate(loanData.interestRate);
+    const cleanTenure = toSafeTenure(loanData.tenureMonths, 1, 480);
+
+    const newLoan: Loan = {
+      ...loanData,
+      principal: cleanPrincipal,
+      outstandingPrincipal: cleanOutstanding,
+      emiAmount: cleanEmi,
+      interestRate: cleanRate,
+      tenureMonths: cleanTenure,
+      id: `loan_${Date.now()}`
+    };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'loans', newLoan.id, newLoan, cryptoKey);
     } else {
@@ -967,7 +1246,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addBudget = async (bgtData: Omit<Budget, 'id' | 'spent'>) => {
-    const newBgt: Budget = { ...bgtData, id: `bgt_${Date.now()}`, spent: 0 };
+    const cleanLimit = toSafeMoney(bgtData.monthlyLimit);
+    const newBgt: Budget = {
+      ...bgtData,
+      monthlyLimit: cleanLimit,
+      id: `bgt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      spent: 0,
+      isActive: bgtData.isActive !== undefined ? bgtData.isActive : true,
+      period: bgtData.period || 'monthly',
+      createdAt: new Date().toISOString()
+    };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'budgets', newBgt.id, newBgt, cryptoKey);
     } else {
@@ -975,8 +1263,45 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateBudget = async (id: string, updates: Partial<Budget>) => {
+    const bgt = budgets.find((b) => b.id === id);
+    if (!bgt) return;
+    const cleanUpdates: Partial<Budget> = { ...updates };
+    if (updates.monthlyLimit !== undefined) {
+      cleanUpdates.monthlyLimit = toSafeMoney(updates.monthlyLimit);
+    }
+    if (updates.spent !== undefined) {
+      cleanUpdates.spent = toSafeMoney(updates.spent);
+    }
+
+    const updated = { ...bgt, ...cleanUpdates, updatedAt: new Date().toISOString() };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'budgets', id, updated, cryptoKey);
+    } else {
+      setBudgets((prev) => prev.map((b) => (b.id === id ? updated : b)));
+    }
+  };
+
+  const deleteBudget = async (id: string) => {
+    const bgt = budgets.find((b) => b.id === id);
+    if (!bgt) return;
+    if (firebaseUser) {
+      await deleteUserDoc(firebaseUser.uid, 'budgets', id);
+    } else {
+      setBudgets((prev) => prev.filter((b) => b.id !== id));
+    }
+  };
+
   const addGoal = async (goalData: Omit<Goal, 'id'>) => {
-    const newGoal: Goal = { ...goalData, id: `goal_${Date.now()}` };
+    const cleanTarget = toSafeMoney(goalData.targetAmount);
+    const cleanCurrent = toSafeMoney(goalData.currentAmount);
+    const newGoal: Goal = {
+      ...goalData,
+      targetAmount: cleanTarget,
+      currentAmount: cleanCurrent,
+      id: `goal_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: new Date().toISOString()
+    };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'goals', newGoal.id, newGoal, cryptoKey);
     } else {
@@ -984,10 +1309,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateGoal = async (id: string, currentAmount: number) => {
+  const updateGoal = async (id: string, updates: Partial<Goal> | number) => {
     const goal = goals.find((g) => g.id === id);
     if (!goal) return;
-    const updated = { ...goal, currentAmount };
+    const patch = typeof updates === 'number' ? { currentAmount: updates } : updates;
+    const cleanPatch: Partial<Goal> = { ...patch };
+    if (patch.targetAmount !== undefined) cleanPatch.targetAmount = toSafeMoney(patch.targetAmount);
+    if (patch.currentAmount !== undefined) cleanPatch.currentAmount = toSafeMoney(patch.currentAmount);
+
+    const updated: Goal = { ...goal, ...cleanPatch, updatedAt: new Date().toISOString() };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'goals', id, updated, cryptoKey);
     } else {
@@ -995,8 +1325,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteGoal = async (id: string) => {
+    const goal = goals.find((g) => g.id === id);
+    if (!goal) return;
+    if (firebaseUser) {
+      await deleteUserDoc(firebaseUser.uid, 'goals', id);
+    } else {
+      setGoals((prev) => prev.filter((g) => g.id !== id));
+    }
+  };
+
   const addReminder = async (remData: Omit<Reminder, 'id'>) => {
-    const newRem: Reminder = { ...remData, id: `rem_${Date.now()}` };
+    const cleanAmount = toSafeMoney(remData.amount);
+    const newRem: Reminder = {
+      ...remData,
+      amount: cleanAmount,
+      id: `rem_${Date.now()}`
+    };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'reminders', newRem.id, newRem, cryptoKey);
     } else {
@@ -1309,6 +1654,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         setIsNotificationDrawerOpen,
         isWhatsNewOpen,
         setIsWhatsNewOpen,
+        selectedPeriod,
+        setSelectedPeriod,
+        preferencesError,
+        setPreferencesError,
         notifications,
         unreadNotificationCount,
         markNotificationAsRead,
@@ -1344,8 +1693,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         precloseEMI,
         addLoan,
         addBudget,
+        updateBudget,
+        deleteBudget,
         addGoal,
         updateGoal,
+        deleteGoal,
         addReminder,
         markReminderPaid,
         resetToCleanLedger,

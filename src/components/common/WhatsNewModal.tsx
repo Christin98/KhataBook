@@ -32,6 +32,18 @@ export default function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
     }
   }, [isOpen]);
 
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const getActiveReleases = () => {
@@ -51,21 +63,26 @@ export default function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="whats-new-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
+    >
       {/* Frosted Backdrop */}
       <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md transition-opacity" onClick={onClose} />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/40 dark:border-white/10 z-10 flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-[90vh] glass-panel bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-7 shadow-2xl border border-slate-200/80 dark:border-slate-800/80 z-10 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-200/50 dark:border-white/10">
+        <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
           <div className="flex items-center gap-3.5">
-            <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 shrink-0 border border-white/20">
-              <Sparkles className="w-6 h-6 animate-pulse" />
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 shrink-0">
+              <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                <h2 id="whats-new-modal-title" className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
                   What's New
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/30">
@@ -194,8 +211,8 @@ export default function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
                     key={idx}
                     className="p-3 rounded-2xl glass-subtle flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-200 font-semibold"
                   >
-                    <span className="w-5 h-5 rounded-lg bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0 text-[10px] font-black">
-                      ✓
+                    <span className="w-5 h-5 rounded-lg bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
+                      <Check className="w-3.5 h-3.5" />
                     </span>
                     <span>{hl}</span>
                   </div>

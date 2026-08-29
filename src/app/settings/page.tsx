@@ -22,6 +22,7 @@ import {
 import { useData } from '@/context/DataContext';
 import { APP_INFO } from '@/lib/constants';
 import { BETA_STORAGE_KEY } from '@/components/common/BetaAccessGate';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 
 export default function SettingsPage() {
   const {
@@ -40,6 +41,13 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState(user.timezone || 'Asia/Kolkata');
   const [dateFormat, setDateFormat] = useState(user.dateFormat || 'DD/MM/YYYY');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const [isDemoConfirmOpen, setIsDemoConfirmOpen] = useState(false);
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
 
   const [devPasscode, setDevPasscode] = useState('');
   const [devError, setDevError] = useState<string | null>(null);
@@ -251,13 +259,8 @@ export default function SettingsPage() {
         </p>
 
         <button
-          onClick={async () => {
-            if (confirm('Are you sure you want to reset to a clean ledger? All current transactions and accounts will be cleared.')) {
-              await resetToCleanLedger();
-              alert('Ledger reset to clean state!');
-            }
-          }}
-          className="px-4 py-2.5 rounded-2xl glass-subtle hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-all flex items-center gap-2 border border-slate-200 dark:border-white/10 cursor-pointer"
+          onClick={() => setIsResetConfirmOpen(true)}
+          className="px-4 py-2.5 rounded-2xl glass-subtle hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-all flex items-center gap-2 border border-slate-200 dark:border-white/10 cursor-pointer min-h-[44px]"
         >
           <RotateCcw className="w-4 h-4" />
           <span>Reset to Clean Ledger</span>
@@ -301,13 +304,8 @@ export default function SettingsPage() {
               </p>
 
               <button
-                onClick={async () => {
-                  if (confirm('Load sample demo dataset for developer testing?')) {
-                    await loadSampleDemoData();
-                    alert('Sample demo data successfully loaded!');
-                  }
-                }}
-                className="px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                onClick={() => setIsDemoConfirmOpen(true)}
+                className="px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer min-h-[44px]"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Load Sample Demo Data</span>
@@ -322,12 +320,12 @@ export default function SettingsPage() {
                   value={devPasscode}
                   onChange={(e) => setDevPasscode(e.target.value)}
                   placeholder="Enter Dev Passcode (1998)..."
-                  className="w-full pl-10 pr-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                  className="w-full pl-10 pr-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none min-h-[44px]"
                 />
               </div>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs shadow-sm transition-all cursor-pointer min-h-[44px]"
               >
                 Unlock
               </button>
@@ -368,6 +366,60 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Toast Message */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xl border border-slate-700 dark:border-slate-200 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+          <Check className="w-4 h-4 text-emerald-500" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Confirm Reset Ledger Dialog */}
+      <ConfirmDialog
+        isOpen={isResetConfirmOpen}
+        title="Reset Ledger to Clean Slate"
+        description="Are you sure you want to reset your ledger? All transactions, accounts, cards, and goals will be cleared."
+        confirmText="Reset Ledger"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isResetting}
+        onConfirm={async () => {
+          setIsResetting(true);
+          try {
+            await resetToCleanLedger();
+            setIsResetConfirmOpen(false);
+            setToastMessage('Ledger reset to pristine clean state!');
+            setTimeout(() => setToastMessage(null), 3000);
+          } finally {
+            setIsResetting(false);
+          }
+        }}
+        onClose={() => setIsResetConfirmOpen(false)}
+      />
+
+      {/* Confirm Load Demo Data Dialog */}
+      <ConfirmDialog
+        isOpen={isDemoConfirmOpen}
+        title="Load Sample Demo Dataset"
+        description="This will seed your ledger with realistic demo transactions, Goa & flatmate circles, cards, and loans for testing."
+        confirmText="Load Dataset"
+        cancelText="Cancel"
+        variant="warning"
+        isLoading={isLoadingDemo}
+        onConfirm={async () => {
+          setIsLoadingDemo(true);
+          try {
+            await loadSampleDemoData();
+            setIsDemoConfirmOpen(false);
+            setToastMessage('Sample demo dataset loaded successfully!');
+            setTimeout(() => setToastMessage(null), 3000);
+          } finally {
+            setIsLoadingDemo(false);
+          }
+        }}
+        onClose={() => setIsDemoConfirmOpen(false)}
+      />
     </div>
   );
 }

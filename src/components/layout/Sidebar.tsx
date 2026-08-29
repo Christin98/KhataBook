@@ -43,30 +43,28 @@ export default function Sidebar() {
   const { setIsQuickAddOpen, user, firebaseUser, setIsAuthModalOpen, logout, isDevMode } = useData();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200/50 dark:border-white/10 bg-white/60 dark:bg-slate-950/40 backdrop-blur-2xl h-screen sticky top-0 z-30 select-none shadow-[4px_0_32px_rgba(0,0,0,0.03)] dark:shadow-[4px_0_40px_rgba(0,0,0,0.3)]">
+    <aside className="hidden lg:flex flex-col w-[238px] min-w-[238px] max-w-[238px] border-r border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl h-screen sticky top-0 z-30 select-none shadow-[1px_0_6px_rgba(0,0,0,0.02)]">
       {/* Brand Header */}
-      <div className="p-6 flex items-center justify-between border-b border-slate-200/40 dark:border-white/5">
-        <Link href="/" className="flex items-center gap-3.5 group">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 group-hover:rotate-2 transition-all border border-white/20">
-            <Wallet className="w-5 h-5" />
+      <div className="p-5 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800/60 h-[76px]">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-all">
+            <Wallet className="w-4.5 h-4.5" />
           </div>
           <div>
-            <h1 className="font-black text-lg leading-none tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                KhataKithab
-              </span>
+            <h1 className="font-black text-base leading-none tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+              <span>KhataKithab</span>
               {APP_INFO.isDev ? (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400/40 shadow-2xs">
+                <span className="px-1.5 py-0.5 rounded text-xs font-extrabold tracking-wider uppercase bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-400/40">
                   DEV
                 </span>
               ) : APP_INFO.isBeta ? (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40 shadow-2xs">
+                <span className="px-1.5 py-0.5 rounded text-xs font-extrabold tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-400/40">
                   BETA
                 </span>
               ) : null}
             </h1>
-            <span className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 tracking-tight">
-              Personal & Shared Finance
+            <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 tracking-tight">
+              Financial Suite
             </span>
           </div>
         </Link>
@@ -79,7 +77,7 @@ export default function Sidebar() {
           className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 hover:from-brand-500 hover:to-indigo-500 active:scale-98 text-white font-bold text-xs shadow-lg shadow-brand-500/25 transition-all border border-white/25 glass-shimmer cursor-pointer"
         >
           <Plus className="w-4 h-4 text-brand-200" />
-          <span>Quick Add Expense</span>
+          <span>Quick Add Entry</span>
         </button>
       </div>
 
@@ -88,7 +86,6 @@ export default function Sidebar() {
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
-          const isUnderDevInProd = !APP_INFO.isBeta && !APP_INFO.isDev && !isDevMode && ['/budgets', '/goals'].includes(item.href);
 
           return (
             <Link
@@ -113,12 +110,8 @@ export default function Sidebar() {
                 <span>{item.label}</span>
               </div>
               
-              {isUnderDevInProd ? (
-                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                  Soon
-                </span>
-              ) : item.badge ? (
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/20">
+              {item.badge ? (
+                <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/20">
                   {item.badge}
                 </span>
               ) : null}
@@ -146,7 +139,7 @@ export default function Sidebar() {
               <p className="font-extrabold text-slate-800 dark:text-slate-200 leading-snug truncate max-w-[110px]">
                 {user.displayName}
               </p>
-              <p className="text-slate-400 text-[11px] truncate w-24">{user.email}</p>
+              <p className="text-slate-400 text-xs truncate w-24">{user.email}</p>
             </div>
           </div>
 
@@ -154,21 +147,21 @@ export default function Sidebar() {
             <button
               onClick={logout}
               title="Sign Out"
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20 cursor-pointer"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
             >
               <LogOut className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="px-2.5 py-1 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-black shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-black shadow-sm transition-all active:scale-95 cursor-pointer min-h-[36px]"
             >
               Sign In
             </button>
           )}
         </div>
 
-        <div className="pt-2 border-t border-slate-200/40 dark:border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+        <div className="pt-2 border-t border-slate-200/40 dark:border-white/5 flex items-center justify-between text-xs text-slate-400 font-medium">
           <span className="flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${firebaseUser ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-amber-500 shadow-sm shadow-amber-500/50'}`} />
             {firebaseUser ? 'Firebase Cloud' : 'Local Storage'}

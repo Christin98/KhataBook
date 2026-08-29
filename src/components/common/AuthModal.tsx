@@ -19,6 +19,18 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Escape key handler
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleGoogleSignIn = async () => {
@@ -74,29 +86,36 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
+    >
       {/* Frosted Scrim */}
       <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-md glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl shadow-2xl border border-white/40 dark:border-white/10 overflow-hidden z-10 space-y-5 p-6 sm:p-7"
+        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto glass-panel bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 z-10 space-y-5 p-6 sm:p-7"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header decoration */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200/50 dark:border-white/10">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 border border-white/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white leading-snug">Welcome to KhataKithab</h2>
+              <h2 id="auth-modal-title" className="text-lg font-black text-slate-900 dark:text-white leading-snug">
+                Welcome to KhataKithab
+              </h2>
               <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold">Realtime Cloud Sync</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Close modal"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close authentication dialog"
           >
             <X className="w-5 h-5" />
           </button>

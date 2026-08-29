@@ -22,6 +22,7 @@ import {
   SAMPLE_GOALS,
   SAMPLE_REMINDERS
 } from './sampleData';
+import { validateFinancialPayload, FinancialValidationError } from './moneySafe';
 
 /**
  * Subscribe to a specific collection for a given user in Firestore.
@@ -107,8 +108,16 @@ export async function saveUserDoc(
   cryptoKey?: CryptoKey
 ): Promise<void> {
   if (!db || !userId || !docId) return;
+
+  // Enforce financial validation and clean sanitization
+  const validation = validateFinancialPayload(collectionName, data);
+  if (!validation.isValid) {
+    console.error(`Validation error in saveUserDoc for ${collectionName}:`, validation.errors);
+    throw new FinancialValidationError(collectionName, validation.errors);
+  }
+
   const docRef = doc(db, 'users', userId, collectionName, docId);
-  let cleanData = sanitizeFirestoreData({ ...data, userId });
+  let cleanData = sanitizeFirestoreData({ ...validation.sanitized, userId });
   const fieldsToEncrypt = ENCRYPTED_FIELDS[collectionName] || [];
   if (cryptoKey && fieldsToEncrypt.length > 0) {
     cleanData = sanitizeFirestoreData(await encryptFields(cleanData, fieldsToEncrypt, cryptoKey));

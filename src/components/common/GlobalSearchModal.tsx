@@ -19,6 +19,18 @@ export default function GlobalSearchModal() {
 
   const [query, setQuery] = useState('');
 
+  // Escape key handler
+  React.useEffect(() => {
+    if (!isSearchModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsSearchModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSearchModalOpen, setIsSearchModalOpen]);
+
   if (!isSearchModalOpen) return null;
 
   const cleanQuery = query.toLowerCase().trim();
@@ -73,14 +85,20 @@ export default function GlobalSearchModal() {
     filteredLoans.length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 animate-fadeIn">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="global-search-title"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-14 sm:pt-20 p-4 animate-fadeIn"
+    >
       {/* Frosted Backdrop */}
       <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md" onClick={() => setIsSearchModalOpen(false)} />
 
-      <div className="relative w-full max-w-2xl glass-panel bg-white/95 dark:bg-slate-900/95 rounded-3xl shadow-2xl border border-white/40 dark:border-white/10 overflow-hidden z-10 flex flex-col max-h-[80vh]">
+      <div className="relative w-full max-w-2xl glass-panel bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden z-10 flex flex-col max-h-[80vh]">
         {/* Search Bar Input */}
-        <div className="p-4 sm:p-5 border-b border-slate-200/50 dark:border-white/10 flex items-center gap-3.5">
-          <Search className="w-5 h-5 text-brand-500" />
+        <div className="p-4 sm:p-5 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center gap-3.5">
+          <Search className="w-5 h-5 text-brand-500 shrink-0" />
+          <h2 id="global-search-title" className="sr-only">Global Search</h2>
           <input
             type="text"
             autoFocus
@@ -88,15 +106,21 @@ export default function GlobalSearchModal() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 bg-transparent text-base font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+            aria-label="Search transactions, circles, accounts, credit cards and loans"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
+            <button
+              onClick={() => setQuery('')}
+              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+              aria-label="Clear search input"
+            >
               <X className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={() => setIsSearchModalOpen(false)}
-            className="text-xs font-black text-slate-500 hover:text-slate-900 dark:hover:text-white px-2.5 py-1 rounded-xl glass-subtle cursor-pointer"
+            aria-label="Close global search"
+            className="text-xs font-black text-slate-500 hover:text-slate-900 dark:hover:text-white px-3 py-1.5 rounded-xl glass-subtle cursor-pointer min-h-[36px] flex items-center justify-center"
           >
             Esc
           </button>

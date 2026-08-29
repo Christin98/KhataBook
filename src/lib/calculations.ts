@@ -11,27 +11,39 @@ import {
   NetBalance,
   SimplifiedDebt,
   Budget,
-  FinancialHealthScore
+  FinancialHealthScore,
+  DatePeriod
 } from './types';
+import {
+  safeRound,
+  toSafeMoney,
+  toSafeSignedMoney,
+  toSafePercentage,
+  toSafeTenure,
+  toSafeInterestRate
+} from './moneySafe';
 
-/**
- * Decimal-safe rounding utility to prevent floating-point representation bugs (e.g. 0.1 + 0.2 = 0.30000000000000004)
- */
-export function safeRound(amount: number): number {
-  return Math.round((amount + Number.EPSILON) * 100) / 100;
-}
+export {
+  safeRound,
+  toSafeMoney,
+  toSafeSignedMoney,
+  toSafePercentage,
+  toSafeTenure,
+  toSafeInterestRate
+};
 
 /**
  * Format currency with Indian Numbering System (e.g., ₹1,50,000)
  */
 export function formatCurrency(amount: number, currency: string = '₹'): string {
-  const absoluteValue = Math.abs(safeRound(amount));
+  const safeAmt = toSafeSignedMoney(amount);
+  const absoluteValue = Math.abs(safeAmt);
   const formattedNumber = new Intl.NumberFormat('en-IN', {
     maximumFractionDigits: 2,
     minimumFractionDigits: 0
   }).format(absoluteValue);
 
-  return `${amount < 0 ? '-' : ''}${currency}${formattedNumber}`;
+  return `${safeAmt < 0 ? '-' : ''}${currency}${formattedNumber}`;
 }
 
 /**
@@ -41,8 +53,237 @@ export function calculateTotalBalance(accounts: Account[]): number {
   return safeRound(
     accounts
       .filter((acc) => acc.isActive)
-      .reduce((sum, acc) => sum + (acc.currentBalance || 0), 0)
+      .reduce((sum, acc) => sum + toSafeSignedMoney(acc.currentBalance), 0)
   );
+}
+
+/**
+ * Period Selector Options definitions
+ */
+export const PERIOD_OPTIONS: { id: DatePeriod; label: string; description: string }[] = [
+  { id: 'all_time', label: 'All time', description: 'All records through present' },
+  { id: 'this_month', label: 'This month', description: 'Current calendar month' },
+  { id: 'last_month', label: 'Last month', description: 'Previous calendar month' },
+  { id: 'last_3_months', label: 'Last 3 months', description: 'Past 3 calendar months' },
+  { id: 'last_6_months', label: 'Last 6 months', description: 'Past 6 calendar months' },
+  { id: 'this_year', label: 'This year', description: 'Current calendar year' }
+];
+
+/**
+ * Get date range start/end ISO strings for a given period
+ */
+export function getDateRangeForPeriod(period: DatePeriod, referenceDate: Date = new Date()): {
+  startDate: string | null;
+  endDate: string | null;
+  label: string;
+  formattedRange: string;
+} {
+  const year = referenceDate.getFullYear();
+  const month = referenceDate.getMonth(); // 0-indexed
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const formatPretty = (dStr: string) => {
+    const d = new Date(dStr + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  switch (period) {
+    case 'this_month': {
+      const start = `${year}-${pad(month + 1)}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const end = `${year}-${pad(month + 1)}-${pad(lastDay)}`;
+      return {
+        startDate: start,
+        endDate: end,
+        label: 'This month',
+        formattedRange: `${formatPretty(start)} – ${formatPretty(end)}`
+      };
+    }
+    case 'last_month': {
+      const prevMonthDate = new Date(year, month - 1, 1);
+      const prevYear = prevMonthDate.getFullYear();
+      const prevMonth = prevMonthDate.getMonth();
+      const start = `${prevYear}-${pad(prevMonth + 1)}-01`;
+      const lastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
+      const end = `${prevYear}-${pad(prevMonth + 1)}-${pad(lastDay)}`;
+      return {
+        startDate: start,
+        endDate: end,
+        label: 'Last month',
+        formattedRange: `${formatPretty(start)} – ${formatPretty(end)}`
+      };
+    }
+    case 'last_3_months': {
+      const startD = new Date(year, month - 2, 1);
+      const start = `${startD.getFullYear()}-${pad(startD.getMonth() + 1)}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const end = `${year}-${pad(month + 1)}-${pad(lastDay)}`;
+      return {
+        startDate: start,
+        endDate: end,
+        label: 'Last 3 months',
+        formattedRange: `${formatPretty(start)} – ${formatPretty(end)}`
+      };
+    }
+    case 'last_6_months': {
+      const startD = new Date(year, month - 5, 1);
+      const start = `${startD.getFullYear()}-${pad(startD.getMonth() + 1)}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const end = `${year}-${pad(month + 1)}-${pad(lastDay)}`;
+      return {
+        startDate: start,
+        endDate: end,
+        label: 'Last 6 months',
+        formattedRange: `${formatPretty(start)} – ${formatPretty(end)}`
+      };
+    }
+    case 'this_year': {
+      const start = `${year}-01-01`;
+      const end = `${year}-12-31`;
+      return {
+        startDate: start,
+        endDate: end,
+        label: 'This year',
+        formattedRange: `${formatPretty(start)} – ${formatPretty(end)}`
+      };
+    }
+    case 'all_time':
+    default: {
+      return {
+        startDate: null,
+        endDate: null,
+        label: 'All time',
+        formattedRange: 'All historical records'
+      };
+    }
+  }
+}
+
+/**
+ * Filter transactions by DatePeriod
+ */
+export function filterTransactionsByPeriod(transactions: Transaction[], period: DatePeriod): Transaction[] {
+  if (period === 'all_time') {
+    return transactions;
+  }
+  const range = getDateRangeForPeriod(period);
+  if (!range.startDate || !range.endDate) {
+    return transactions;
+  }
+  return transactions.filter((t) => {
+    if (!t.date) return false;
+    const dateStr = t.date.length >= 10 ? t.date.substring(0, 10) : t.date;
+    return dateStr >= range.startDate! && dateStr <= range.endDate!;
+  });
+}
+
+/**
+ * Calculate Summary (Income, Expenses, Savings, Savings Rate) for DatePeriod
+ */
+export function calculatePeriodSummary(transactions: Transaction[], period: DatePeriod) {
+  const periodTxns = filterTransactionsByPeriod(transactions, period);
+
+  const income = safeRound(
+    periodTxns
+      .filter((t) => t.type === 'income')
+      .reduce((sum, t) => sum + toSafeMoney(t.amount), 0)
+  );
+
+  const expenses = safeRound(
+    periodTxns
+      .filter((t) => t.type === 'expense')
+      .reduce((sum, t) => sum + toSafeMoney(t.amount), 0)
+  );
+
+  const savings = safeRound(income - expenses);
+  const savingsRate = income > 0 ? toSafePercentage(income - expenses, income, 0, 100) : 0;
+
+  return {
+    income,
+    expenses,
+    savings,
+    savingsRate,
+    count: periodTxns.length,
+    incomeCount: periodTxns.filter((t) => t.type === 'income').length,
+    expenseCount: periodTxns.filter((t) => t.type === 'expense').length
+  };
+}
+
+/**
+ * Calculate genuine prior-period comparison metrics derived exclusively from actual saved data.
+ * Returns hasPriorData: false when insufficient history exists.
+ */
+export function calculatePeriodComparison(transactions: Transaction[], period: DatePeriod) {
+  const currentSummary = calculatePeriodSummary(transactions, period);
+  const now = new Date();
+
+  let priorTxns: Transaction[] = [];
+  let priorPeriodLabel = '';
+
+  if (period === 'this_month') {
+    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthStr = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+    priorTxns = filterTransactionsByMonth(transactions, lastMonthStr);
+    priorPeriodLabel = 'last month';
+  } else if (period === 'last_month') {
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const prevMonthStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+    priorTxns = filterTransactionsByMonth(transactions, prevMonthStr);
+    priorPeriodLabel = 'prior month';
+  } else if (period === 'last_3_months') {
+    const startM = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const endM = new Date(now.getFullYear(), now.getMonth() - 3, 0);
+    const startStr = startM.toISOString().split('T')[0];
+    const endStr = endM.toISOString().split('T')[0];
+    priorTxns = transactions.filter((t) => t.date && t.date >= startStr && t.date <= endStr);
+    priorPeriodLabel = 'prior 3M';
+  } else if (period === 'last_6_months') {
+    const startM = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const endM = new Date(now.getFullYear(), now.getMonth() - 6, 0);
+    const startStr = startM.toISOString().split('T')[0];
+    const endStr = endM.toISOString().split('T')[0];
+    priorTxns = transactions.filter((t) => t.date && t.date >= startStr && t.date <= endStr);
+    priorPeriodLabel = 'prior 6M';
+  } else if (period === 'this_year') {
+    const priorYearStr = `${now.getFullYear() - 1}`;
+    priorTxns = transactions.filter((t) => t.date && t.date.startsWith(priorYearStr));
+    priorPeriodLabel = 'last year';
+  }
+
+  const hasPriorData = priorTxns.length > 0 && currentSummary.count > 0;
+  if (!hasPriorData) {
+    return {
+      hasPriorData: false,
+      priorPeriodLabel: '',
+      incomeDelta: null,
+      expenseDelta: null,
+      savingsRateDelta: null
+    };
+  }
+
+  const priorIncome = safeRound(
+    priorTxns.filter((t) => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0)
+  );
+  const priorExpenses = safeRound(
+    priorTxns.filter((t) => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0)
+  );
+  const priorSavings = safeRound(priorIncome - priorExpenses);
+  const priorSavingsRate = priorIncome > 0 ? safeRound(((priorIncome - priorExpenses) / priorIncome) * 100) : 0;
+
+  const incomeDelta = priorIncome > 0 ? safeRound(((currentSummary.income - priorIncome) / priorIncome) * 100) : null;
+  const expenseDelta = priorExpenses > 0 ? safeRound(((currentSummary.expenses - priorExpenses) / priorExpenses) * 100) : null;
+  const savingsRateDelta = (currentSummary.income > 0 && priorIncome > 0) ? safeRound(currentSummary.savingsRate - priorSavingsRate) : null;
+
+  return {
+    hasPriorData: true,
+    priorPeriodLabel,
+    incomeDelta,
+    expenseDelta,
+    savingsRateDelta,
+    priorIncome,
+    priorExpenses,
+    priorSavingsRate
+  };
 }
 
 /**
@@ -103,6 +344,27 @@ export function calculateMonthlyCashflowTrend(transactions: Transaction[], month
   }
 
   return result;
+}
+
+/**
+ * Calculate dynamic period cashflow trend for charts adapting to active period
+ */
+export function calculatePeriodCashflowTrend(transactions: Transaction[], period: DatePeriod) {
+  let monthCount = 6;
+  if (period === 'this_month' || period === 'last_month') {
+    monthCount = 4;
+  } else if (period === 'last_3_months') {
+    monthCount = 3;
+  } else if (period === 'last_6_months') {
+    monthCount = 6;
+  } else if (period === 'this_year') {
+    const now = new Date();
+    monthCount = Math.max(now.getMonth() + 1, 4);
+  } else if (period === 'all_time') {
+    monthCount = 6;
+  }
+
+  return calculateMonthlyCashflowTrend(transactions, monthCount);
 }
 
 /**
@@ -226,12 +488,13 @@ export function calculateEMIFinancials(
   totalPayable: number;
   monthlyEmi: number;
 } {
-  const safePrincipal = Math.max(0, principal);
-  const safeTenure = Math.max(1, tenureMonths);
-  const safeProcFee = Math.max(0, processingFee);
+  const safePrincipal = toSafeMoney(principal);
+  const safeTenure = toSafeTenure(tenureMonths, 1, 120);
+  const safeRate = toSafeInterestRate(interestRate, 0, 100);
+  const safeProcFee = toSafeMoney(processingFee);
   const taxAmount = safeRound(safeProcFee * 0.18); // 18% GST on processing fee
 
-  if (isNoCost || interestRate <= 0) {
+  if (isNoCost || safeRate <= 0) {
     const monthlyEmi = safeRound(safePrincipal / safeTenure);
     const totalPayable = safeRound(safePrincipal + safeProcFee + taxAmount);
     return {
@@ -245,9 +508,17 @@ export function calculateEMIFinancials(
   }
 
   // Regular EMI with reducing balance formula: E = P * r * (1+r)^n / ((1+r)^n - 1)
-  const r = (interestRate / 12) / 100;
+  const r = (safeRate / 12) / 100;
   const emiFactor = Math.pow(1 + r, safeTenure);
-  const monthlyEmi = safeRound((safePrincipal * r * emiFactor) / (emiFactor - 1));
+  let monthlyEmi = safeRound(safePrincipal / safeTenure);
+
+  if (emiFactor > 1 && !isNaN(emiFactor) && isFinite(emiFactor)) {
+    const calculatedEmi = (safePrincipal * r * emiFactor) / (emiFactor - 1);
+    if (!isNaN(calculatedEmi) && isFinite(calculatedEmi)) {
+      monthlyEmi = toSafeMoney(calculatedEmi);
+    }
+  }
+
   const totalRepayment = safeRound(monthlyEmi * safeTenure);
   const interestAmount = safeRound(Math.max(0, totalRepayment - safePrincipal));
   const totalPayable = safeRound(totalRepayment + safeProcFee + taxAmount);
@@ -364,8 +635,9 @@ export function calculateOngoingEMIFinancials(
   isNoCost: boolean = false,
   baseDate: Date = new Date()
 ) {
-  const safeTenure = Math.max(1, tenureMonths);
-  const safeMonthlyEmi = monthlyEmi > 0 ? monthlyEmi : safeRound(originalAmount / safeTenure);
+  const safeOriginalAmount = toSafeMoney(originalAmount);
+  const safeTenure = toSafeTenure(tenureMonths, 1, 120);
+  const safeMonthlyEmi = toSafeMoney(monthlyEmi, safeRound(safeOriginalAmount / safeTenure));
   
   const today = new Date(baseDate);
   today.setHours(0, 0, 0, 0);
@@ -392,9 +664,8 @@ export function calculateOngoingEMIFinancials(
   // Maximum allowable paid installments cannot exceed the number of installments reached by today
   const maxAllowedPaid = dueReachedCount;
   const isPaidExceeded = paidInstallments > maxAllowedPaid;
-  const safePaidCount = Math.max(0, Math.min(safeTenure, paidInstallments));
+  const safePaidCount = Math.max(0, Math.min(safeTenure, Math.round(paidInstallments || 0)));
 
-  const safeOriginalAmount = Math.max(0, originalAmount);
   const totalPayable = safeRound(safeMonthlyEmi * safeTenure);
   const totalInterest = safeRound(Math.max(0, totalPayable - safeOriginalAmount));
   const paidAmount = safeRound(safePaidCount * safeMonthlyEmi);
@@ -695,6 +966,155 @@ export function calculateUserCircleTotals(
   return {
     totalReceive: safeRound(totalReceive),
     totalPay: safeRound(totalPay)
+  };
+}
+
+/**
+ * Calculate actual spent amount for a category in a specific month (format YYYY-MM)
+ */
+export function calculateCategorySpentForMonth(
+  transactions: Transaction[],
+  category: string,
+  monthStr: string
+): number {
+  const normCat = category.trim().toLowerCase();
+  const spent = transactions
+    .filter((t) => {
+      if (t.type !== 'expense') return false;
+      if (!t.date || !t.date.startsWith(monthStr)) return false;
+      const tCat = (t.category || '').trim().toLowerCase();
+      return tCat === normCat;
+    })
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+  return safeRound(spent);
+}
+
+/**
+ * Calculate comprehensive stats for a budget in a given month
+ */
+export function calculateBudgetStats(
+  budget: Budget,
+  transactions: Transaction[],
+  monthStr: string
+) {
+  const spent = calculateCategorySpentForMonth(transactions, budget.category, monthStr);
+  const limit = budget.monthlyLimit || 0;
+  const percentage = limit > 0 ? safeRound((spent / limit) * 100) : 0;
+  const remaining = safeRound(Math.max(0, limit - spent));
+  const overAmount = safeRound(Math.max(0, spent - limit));
+  const isOverBudget = spent > limit;
+  const isWarning = !isOverBudget && percentage >= 80;
+  const isSafe = !isOverBudget && !isWarning;
+
+  let statusText = 'On Track';
+  if (isOverBudget) {
+    statusText = `Over by ₹${overAmount.toLocaleString('en-IN')}`;
+  } else if (isWarning) {
+    statusText = `${percentage.toFixed(0)}% used (Warning)`;
+  } else {
+    statusText = `₹${remaining.toLocaleString('en-IN')} remaining`;
+  }
+
+  return {
+    spent,
+    limit,
+    percentage,
+    remaining,
+    overAmount,
+    isOverBudget,
+    isWarning,
+    isSafe,
+    statusText,
+    isActive: budget.isActive !== false
+  };
+}
+
+/**
+ * Calculate Overall Budget-Health Ring Summary from saved budgets and actual transactions
+ */
+export function calculateBudgetHealthRing(
+  budgets: Budget[],
+  transactions: Transaction[],
+  monthStr: string
+) {
+  const activeBudgets = budgets.filter((b) => b.isActive !== false);
+
+  if (activeBudgets.length === 0) {
+    return {
+      hasBudgets: false,
+      totalLimit: 0,
+      totalSpent: 0,
+      totalRemaining: 0,
+      totalOverspent: 0,
+      utilizationPercentage: 0,
+      healthScore: 100,
+      rating: 'No Active Budgets',
+      onTrackCount: 0,
+      warningCount: 0,
+      overBudgetCount: 0,
+      totalCount: 0
+    };
+  }
+
+  let totalLimit = 0;
+  let totalSpent = 0;
+  let onTrackCount = 0;
+  let warningCount = 0;
+  let overBudgetCount = 0;
+  let totalOverspent = 0;
+
+  activeBudgets.forEach((b) => {
+    const stats = calculateBudgetStats(b, transactions, monthStr);
+    totalLimit += stats.limit;
+    totalSpent += stats.spent;
+    if (stats.isOverBudget) {
+      overBudgetCount++;
+      totalOverspent += stats.overAmount;
+    } else if (stats.isWarning) {
+      warningCount++;
+    } else {
+      onTrackCount++;
+    }
+  });
+
+  totalLimit = safeRound(totalLimit);
+  totalSpent = safeRound(totalSpent);
+  const totalRemaining = safeRound(Math.max(0, totalLimit - totalSpent));
+  const utilizationPercentage = totalLimit > 0 ? safeRound((totalSpent / totalLimit) * 100) : 0;
+
+  // Health Score from 0 to 100
+  let healthScore = 100;
+  if (overBudgetCount > 0) {
+    healthScore -= overBudgetCount * 25;
+  }
+  if (warningCount > 0) {
+    healthScore -= warningCount * 10;
+  }
+  if (utilizationPercentage > 100) {
+    healthScore -= Math.min(30, (utilizationPercentage - 100) * 0.5);
+  }
+  healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
+
+  let rating: 'Excellent' | 'Good' | 'Attention Needed' | 'Critical' = 'Excellent';
+  if (overBudgetCount > 0 || healthScore < 50) {
+    rating = healthScore < 40 ? 'Critical' : 'Attention Needed';
+  } else if (warningCount > 0 || healthScore < 80) {
+    rating = 'Good';
+  }
+
+  return {
+    hasBudgets: true,
+    totalLimit,
+    totalSpent,
+    totalRemaining,
+    totalOverspent,
+    utilizationPercentage,
+    healthScore,
+    rating,
+    onTrackCount,
+    warningCount,
+    overBudgetCount,
+    totalCount: activeBudgets.length
   };
 }
 

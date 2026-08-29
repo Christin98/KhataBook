@@ -71,32 +71,38 @@ if (isBetaRelease) {
   run('node scripts/update-version.js --no-bump', 'Failed to update version constants');
 
   // Record into changelog-data.json
-  const betaEntry = {
-    version: newVersionStr,
-    stage: 'Beta Flight',
-    date: today,
-    title: customMessage || `Beta Flight ${newVersionStr}`,
-    summary: customMessage ? `Beta candidate build: ${customMessage}` : 'Beta flight candidate build with live feature verifications.',
-    isCurrent: true,
-    highlights: [
-      `🚀 Flight release ${newVersionStr}`,
-      '⚡ Verified local compilation & test suites',
-      '🔒 Private beta flight access gated'
-    ],
-    features: [
-      {
-        title: customMessage || 'Beta Flight Updates',
-        description: 'Newest changes and fixes ready for flight candidate testing.',
-        tag: 'Beta Flight'
-      }
-    ],
-    fixes: [
-      'Automated pre-flight verification passed'
-    ]
-  };
-
-  // Prepend to beta changelog (mark older as not current)
-  changelog.beta = [betaEntry, ...changelog.beta.map((b) => ({ ...b, isCurrent: false }))];
+  const existingBetaIndex = changelog.beta.findIndex((b) => b.version === newVersionStr);
+  if (existingBetaIndex !== -1) {
+    changelog.beta = changelog.beta.map((b, idx) => ({
+      ...b,
+      isCurrent: idx === existingBetaIndex
+    }));
+  } else {
+    const betaEntry = {
+      version: newVersionStr,
+      stage: 'Beta Flight',
+      date: today,
+      title: customMessage || `Beta Flight ${newVersionStr}`,
+      summary: customMessage ? `Beta candidate build: ${customMessage}` : 'Beta flight candidate build with live feature verifications.',
+      isCurrent: true,
+      highlights: [
+        `🚀 Flight release ${newVersionStr}`,
+        '⚡ Verified local compilation & test suites',
+        '🔒 Private beta flight access gated'
+      ],
+      features: [
+        {
+          title: customMessage || 'Beta Flight Updates',
+          description: 'Newest changes and fixes ready for flight candidate testing.',
+          tag: 'Beta Flight'
+        }
+      ],
+      fixes: [
+        'Automated pre-flight verification passed'
+      ]
+    };
+    changelog.beta = [betaEntry, ...changelog.beta.map((b) => ({ ...b, isCurrent: false }))];
+  }
   fs.writeFileSync(changelogDataPath, JSON.stringify(changelog, null, 2) + '\n', 'utf8');
 
   // Run local build verification

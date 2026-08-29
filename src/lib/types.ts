@@ -5,6 +5,21 @@ export type LoanType = 'personal' | 'home' | 'vehicle' | 'education' | 'other';
 export type RecurrenceType = 'once' | 'weekly' | 'monthly' | 'yearly';
 export type ReminderStatus = 'pending' | 'paid' | 'overdue';
 
+export type DatePeriod =
+  | 'all_time'
+  | 'this_month'
+  | 'last_month'
+  | 'last_3_months'
+  | 'last_6_months'
+  | 'this_year';
+
+export interface UserPreferences {
+  datePeriod: DatePeriod;
+  currency?: string;
+  theme?: 'light' | 'dark' | 'system';
+  [key: string]: any;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -42,6 +57,7 @@ export interface Transaction {
   paymentMethod?: string;
   notes?: string;
   attachmentUrl?: string;
+  fingerprint?: string;
   createdAt: string;
 }
 
@@ -238,7 +254,10 @@ export interface Budget {
   category: string;
   monthlyLimit: number;
   spent: number;
-  period: string; // e.g. "2026-08"
+  period: string; // e.g. "2026-08" or monthly
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Goal {
@@ -247,10 +266,14 @@ export interface Goal {
   name: string;
   targetAmount: number;
   currentAmount: number;
-  targetDate: string;
+  targetDate?: string;
+  dueDate?: string;
+  notes?: string;
   accountId?: string;
-  icon: string;
-  color: string;
+  icon?: string;
+  color?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Reminder {

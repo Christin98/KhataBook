@@ -46,6 +46,18 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
 
   const [selectedTab, setSelectedTab] = useState<string>('all');
 
+  // Escape key handler
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const filteredNotifications = notifications.filter((n) => {
@@ -92,40 +104,48 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
     }
   };
 
-  const handleActionClick = (notification: AppNotification) => {
-    markNotificationAsRead(notification.id);
+  const handleAction = (notification: AppNotification) => {
+    if (!notification.read) {
+      markNotificationAsRead(notification.id);
+    }
+
     if (notification.type === 'update') {
-      setIsWhatsNewOpen(true);
       onClose();
+      setIsWhatsNewOpen(true);
     } else if (notification.type === 'reminder' && notification.metadata?.reminderId) {
       markReminderPaid(notification.metadata.reminderId);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden animate-fadeIn">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notification-drawer-title"
+      className="fixed inset-0 z-50 overflow-hidden animate-fadeIn"
+    >
       {/* Frosted Scrim Backdrop */}
       <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-md transition-opacity" onClick={onClose} />
 
       {/* Slide-over Glass Panel */}
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-md glass-panel bg-white/95 dark:bg-slate-900/95 shadow-2xl border-l border-white/40 dark:border-white/10 flex flex-col z-10">
+        <div className="w-screen max-w-md glass-panel bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200/80 dark:border-slate-800/80 flex flex-col z-10">
           {/* Header */}
-          <div className="p-5 sm:p-6 border-b border-slate-200/50 dark:border-white/10 flex items-center justify-between">
+          <div className="p-5 sm:p-6 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold border border-brand-500/30 shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold border border-brand-500/25 shadow-inner">
                 <Bell className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-black text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <h3 id="notification-drawer-title" className="font-black text-base text-slate-900 dark:text-white flex items-center gap-2">
                   <span>Notifications</span>
                   {unreadNotificationCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-xs">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-black bg-rose-500 text-white shadow-xs">
                       {unreadNotificationCount} New
                     </span>
                   )}
                 </h3>
-                <p className="text-[11px] text-slate-400 font-medium">Bill dues, budget alerts & releases</p>
+                <p className="text-xs text-slate-400 font-medium">Bill dues, budget alerts & releases</p>
               </div>
             </div>
 
@@ -245,7 +265,7 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
                       </p>
 
                       <div className="flex items-center justify-between pt-2">
-                        <span className="text-[10px] text-slate-400 font-medium">{notif.date}</span>
+                        <span className="text-xs text-slate-400 font-medium">{notif.date}</span>
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-2">
@@ -253,9 +273,9 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleActionClick(notif);
+                                handleAction(notif);
                               }}
-                              className="px-3 py-1 rounded-xl bg-brand-500/15 hover:bg-brand-500/25 text-brand-700 dark:text-brand-300 text-[11px] font-black flex items-center gap-1 border border-brand-500/30 cursor-pointer"
+                              className="px-3 py-1 rounded-xl bg-brand-500/15 hover:bg-brand-500/25 text-brand-700 dark:text-brand-300 text-xs font-black flex items-center gap-1 border border-brand-500/30 cursor-pointer min-h-[36px]"
                             >
                               <span>{notif.actionLabel}</span>
                               <ArrowRight className="w-3 h-3" />

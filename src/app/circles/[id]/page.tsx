@@ -19,7 +19,8 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Copy,
-  CreditCard
+  CreditCard,
+  AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useData } from '@/context/DataContext';
@@ -58,6 +59,7 @@ export default function CircleDetailPage() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [recordPersonalTxn, setRecordPersonalTxn] = useState(true);
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
+  const [expenseFormError, setExpenseFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (circle) {
@@ -110,9 +112,9 @@ export default function CircleDetailPage() {
   if (!circle) {
     return (
       <div className="py-20 text-center space-y-4">
-        <h2 className="text-xl font-bold text-slate-700 dark:text-slate-300">Circle Not Found</h2>
-        <Link href="/circles" className="text-brand-600 font-bold text-sm">
-          ← Return to Circles
+        <Link href="/circles" className="inline-flex items-center gap-1.5 text-brand-600 font-bold text-sm hover:underline">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Return to Circles</span>
         </Link>
       </div>
     );
@@ -142,15 +144,19 @@ export default function CircleDetailPage() {
 
   const handleCreateExpense = (e: React.FormEvent) => {
     e.preventDefault();
+    setExpenseFormError(null);
     const numAmount = parseFloat(expenseAmount);
-    if (isNaN(numAmount) || numAmount <= 0) return;
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setExpenseFormError('Please enter a valid expense amount greater than ₹0.');
+      return;
+    }
 
     const targetMembers = splitMode === 'all'
       ? circle.members
       : circle.members.filter((m) => selectedMemberIds.includes(m.id));
 
     if (targetMembers.length === 0) {
-      alert('Please select at least 1 member to split this expense with.');
+      setExpenseFormError('Please select at least 1 member to split this expense with.');
       return;
     }
 
@@ -431,6 +437,13 @@ export default function CircleDetailPage() {
           <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl z-10 border border-slate-100 dark:border-slate-800 space-y-4">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add Circle Expense</h3>
 
+            {expenseFormError && (
+              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{expenseFormError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCreateExpense} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Expense Title</label>
@@ -563,15 +576,15 @@ export default function CircleDetailPage() {
                           }`}
                         >
                           <span className="flex items-center gap-2">
-                            <span className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] ${
+                            <span className={`w-4 h-4 rounded-md flex items-center justify-center ${
                               isSelected ? 'bg-brand-600 text-white font-extrabold' : 'border border-slate-300'
                             }`}>
-                              {isSelected ? '✓' : ''}
+                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                             </span>
                             {m.name}
                           </span>
                           {isSelected && parseFloat(expenseAmount) > 0 && selectedMemberIds.length > 0 && (
-                            <span className="text-[11px] text-brand-600 dark:text-brand-400 font-extrabold">
+                            <span className="text-xs text-brand-600 dark:text-brand-400 font-extrabold">
                               {formatCurrency(parseFloat(expenseAmount) / selectedMemberIds.length)}
                             </span>
                           )}
