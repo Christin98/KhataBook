@@ -6,8 +6,8 @@ export const APP_INFO = {
   isDev: true,
   isBeta: true,
   stage: 'Local Dev',
-  build: '2026.08.30.0001',
-  versionFull: 'khatakithab v0.5.5-beta.1 (Local Dev Build 2026.08.30.0001)',
+  build: '2026.08.30.0009',
+  versionFull: 'khatakithab v0.5.5-beta.1 (Local Dev Build 2026.08.30.0009)',
   description: 'Smart Personal Finance & Group Expense Splitting App',
   developer: 'You & Antigravity (Pair Programming)',
   techStack: 'Next.js 15 • TypeScript • Tailwind CSS • Firebase Engine'
