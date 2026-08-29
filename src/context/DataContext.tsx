@@ -13,7 +13,10 @@ import {
   CreditCardPayment,
   CardPaymentType,
   EMI,
+  EMIPayment,
   Loan,
+  LoanPayment,
+  LoanInterestType,
   Budget,
   Goal,
   Reminder,
@@ -58,6 +61,12 @@ import {
   toSafeInterestRate
 } from '@/lib/moneySafe';
 import {
+  calculateEMIDetailedSummary,
+  calculateLoanDetailedSummary,
+  calculateLoanAmortizationSchedule,
+  calculateLoanEMI
+} from '@/lib/calculations';
+import {
   SAMPLE_USER,
   SAMPLE_ACCOUNTS,
   SAMPLE_TRANSACTIONS,
@@ -91,7 +100,9 @@ interface DataContextType {
   cardStatements: CreditCardStatement[];
   cardPayments: CreditCardPayment[];
   emis: EMI[];
+  emiPayments: EMIPayment[];
   loans: Loan[];
+  loanPayments: LoanPayment[];
   budgets: Budget[];
   goals: Goal[];
   reminders: Reminder[];
@@ -165,12 +176,41 @@ interface DataContextType {
   }) => void;
 
   // EMIs
-  addEMI: (emi: Omit<EMI, 'id' | 'createdAt'>) => void;
-  updateEMI: (id: string, updates: Partial<EMI>) => void;
-  payEMIInstallment: (emiId: string, sourceAccountId?: string) => void;
-  precloseEMI: (emiId: string, precloseAmount: number, sourceAccountId?: string) => void;
+  addEMI: (emi: Omit<EMI, 'id' | 'createdAt'>) => Promise<void>;
+  updateEMI: (id: string, updates: Partial<EMI>) => Promise<void>;
+  editEMI: (id: string, updates: Partial<EMI>) => Promise<void>;
+  recordEMIPayment: (payment: {
+    emiId: string;
+    cardId: string;
+    installmentNumber: number;
+    amount: number;
+    paymentDate: string;
+    sourceAccountId?: string;
+    notes?: string;
+  }) => Promise<void>;
+  payEMIInstallment: (emiId: string, sourceAccountId?: string) => Promise<void>;
+  precloseEMI: (emiId: string, precloseAmount: number, sourceAccountId?: string) => Promise<void>;
+  archiveEMI: (id: string) => Promise<void>;
+  restoreEMI: (id: string) => Promise<void>;
+  deleteEMI: (id: string, softDelete?: boolean) => Promise<void>;
 
-  addLoan: (loan: Omit<Loan, 'id'>) => void;
+  // Loans
+  addLoan: (loan: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  editLoan: (id: string, updates: Partial<Loan>) => Promise<void>;
+  recordLoanPayment: (payment: {
+    loanId: string;
+    installmentNumber: number;
+    amount: number;
+    paymentDate: string;
+    principalComponent?: number;
+    interestComponent?: number;
+    sourceAccountId?: string;
+    notes?: string;
+  }) => Promise<void>;
+  archiveLoan: (id: string) => Promise<void>;
+  restoreLoan: (id: string) => Promise<void>;
+  deleteLoan: (id: string, softDelete?: boolean) => Promise<void>;
+
   addBudget: (budget: Omit<Budget, 'id' | 'spent'>) => void;
   updateBudget: (id: string, updates: Partial<Budget>) => void;
   deleteBudget: (id: string) => void;
@@ -248,7 +288,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [cardStatements, setCardStatements] = useState<CreditCardStatement[]>([]);
   const [cardPayments, setCardPayments] = useState<CreditCardPayment[]>([]);
   const [emis, setEmis] = useState<EMI[]>([]);
+  const [emiPayments, setEmiPayments] = useState<EMIPayment[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [loanPayments, setLoanPayments] = useState<LoanPayment[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -452,7 +494,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         subscribeToUserCollection<Settlement>(userId, 'settlements', setSettlements, undefined, cryptoKey),
         subscribeToUserCollection<CreditCard>(userId, 'creditCards', setCreditCards, undefined, cryptoKey),
         subscribeToUserCollection<EMI>(userId, 'emis', setEmis, undefined, cryptoKey),
+        subscribeToUserCollection<EMIPayment>(userId, 'emiPayments', setEmiPayments, undefined, cryptoKey),
         subscribeToUserCollection<Loan>(userId, 'loans', setLoans, undefined, cryptoKey),
+        subscribeToUserCollection<LoanPayment>(userId, 'loanPayments', setLoanPayments, undefined, cryptoKey),
         subscribeToUserCollection<Budget>(userId, 'budgets', setBudgets, undefined, cryptoKey),
         subscribeToUserCollection<Goal>(userId, 'goals', setGoals, undefined, cryptoKey),
         subscribeToUserCollection<Reminder>(userId, 'reminders', setReminders, undefined, cryptoKey),
@@ -514,8 +558,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (savedPmts) setCardPayments(JSON.parse(savedPmts));
         const savedEmis = localStorage.getItem('khatakithab_emis');
         if (savedEmis) setEmis(JSON.parse(savedEmis));
+        const savedEmiPayments = localStorage.getItem('khatakithab_emi_payments');
+        if (savedEmiPayments) setEmiPayments(JSON.parse(savedEmiPayments));
         const savedLoans = localStorage.getItem('khatakithab_loans');
         if (savedLoans) setLoans(JSON.parse(savedLoans));
+        const savedLoanPayments = localStorage.getItem('khatakithab_loan_payments');
+        if (savedLoanPayments) setLoanPayments(JSON.parse(savedLoanPayments));
         const savedBudgets = localStorage.getItem('khatakithab_budgets');
         if (savedBudgets) setBudgets(JSON.parse(savedBudgets));
         const savedGoals = localStorage.getItem('khatakithab_goals');
@@ -553,7 +601,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('khatakithab_statements', JSON.stringify(cardStatements));
         localStorage.setItem('khatakithab_payments', JSON.stringify(cardPayments));
         localStorage.setItem('khatakithab_emis', JSON.stringify(emis));
+        localStorage.setItem('khatakithab_emi_payments', JSON.stringify(emiPayments));
         localStorage.setItem('khatakithab_loans', JSON.stringify(loans));
+        localStorage.setItem('khatakithab_loan_payments', JSON.stringify(loanPayments));
         localStorage.setItem('khatakithab_budgets', JSON.stringify(budgets));
         localStorage.setItem('khatakithab_goals', JSON.stringify(goals));
         localStorage.setItem('khatakithab_reminders', JSON.stringify(reminders));
@@ -576,7 +626,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     cardStatements,
     cardPayments,
     emis,
+    emiPayments,
     loans,
+    loanPayments,
     budgets,
     goals,
     reminders,
@@ -1053,18 +1105,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const tenure = toSafeTenure(emiData.tenureMonths || 12, 1, 120);
     const paid = Math.min(tenure, toSafeTenure(emiData.paidInstallments ?? emiData.paidMonths ?? 0, 0, 120));
     const cleanPurchase = toSafeMoney(emiData.purchaseAmount || emiData.principalAmount);
-    const cleanPrincipal = toSafeMoney(emiData.principalAmount || emiData.purchaseAmount);
-    const cleanMonthly = toSafeMoney(emiData.monthlyEmi || emiData.emiAmount);
-    const cleanTotal = toSafeMoney(emiData.totalPayable, safeRound(cleanMonthly * tenure));
+    const cleanDownPayment = toSafeMoney(emiData.downPayment);
+    const cleanFinanced = safeRound(Math.max(0, cleanPurchase - cleanDownPayment));
+    const cleanPrincipal = toSafeMoney(emiData.principalAmount || cleanFinanced || cleanPurchase);
+    const cleanMonthly = toSafeMoney(emiData.monthlyEmi || emiData.emiAmount || safeRound(cleanFinanced / tenure));
+    const cleanTotal = toSafeMoney(emiData.totalPayable, safeRound(cleanMonthly * tenure + cleanDownPayment));
 
     const newEMI: EMI = {
       ...emiData,
       purchaseAmount: cleanPurchase,
+      downPayment: cleanDownPayment,
+      financedAmount: cleanFinanced,
       principalAmount: cleanPrincipal,
       monthlyEmi: cleanMonthly,
       emiAmount: cleanMonthly,
       totalPayable: cleanTotal,
-      downPayment: toSafeMoney(emiData.downPayment),
       interestRate: toSafeInterestRate(emiData.interestRate),
       tenureMonths: tenure,
       id: `emi_${Date.now()}`,
@@ -1074,7 +1129,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       paidInstallments: paid,
       remainingInstallments: Math.max(0, tenure - paid),
       status: emiData.status || (paid >= tenure ? 'Completed' : 'Active'),
-      createdAt: new Date().toISOString()
+      isArchived: false,
+      isDeleted: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'emis', newEMI.id, newEMI, cryptoKey);
@@ -1086,9 +1144,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateEMI = async (id: string, updates: Partial<EMI>) => {
     const emi = emis.find((e) => e.id === id);
     if (!emi) return;
-    const cleanUpdates: Partial<EMI> = { ...updates };
+    const cleanUpdates: Partial<EMI> = { ...updates, updatedAt: new Date().toISOString() };
     if (updates.purchaseAmount !== undefined) cleanUpdates.purchaseAmount = toSafeMoney(updates.purchaseAmount);
     if (updates.principalAmount !== undefined) cleanUpdates.principalAmount = toSafeMoney(updates.principalAmount);
+    if (updates.downPayment !== undefined) cleanUpdates.downPayment = toSafeMoney(updates.downPayment);
+    if (updates.financedAmount !== undefined) cleanUpdates.financedAmount = toSafeMoney(updates.financedAmount);
     if (updates.monthlyEmi !== undefined) cleanUpdates.monthlyEmi = toSafeMoney(updates.monthlyEmi);
     if (updates.emiAmount !== undefined) cleanUpdates.emiAmount = toSafeMoney(updates.emiAmount);
     if (updates.totalPayable !== undefined) cleanUpdates.totalPayable = toSafeMoney(updates.totalPayable);
@@ -1103,27 +1163,88 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const payEMIInstallment = async (emiId: string, sourceAccountId?: string) => {
-    const emi = emis.find((e) => e.id === emiId);
+  const editEMI = async (id: string, updates: Partial<EMI>) => {
+    const emi = emis.find((e) => e.id === id);
     if (!emi) return;
 
-    const currentPaid = emi.paidInstallments ?? emi.paidMonths ?? 0;
-    const newPaid = currentPaid + 1;
-    const isCompleted = newPaid >= emi.tenureMonths;
-    const emiAmt = toSafeMoney(emi.monthlyEmi || emi.emiAmount);
+    const cleanUpdates: Partial<EMI> = { ...updates, updatedAt: new Date().toISOString() };
+    if (updates.purchaseAmount !== undefined) cleanUpdates.purchaseAmount = toSafeMoney(updates.purchaseAmount);
+    if (updates.principalAmount !== undefined) cleanUpdates.principalAmount = toSafeMoney(updates.principalAmount);
+    if (updates.downPayment !== undefined) cleanUpdates.downPayment = toSafeMoney(updates.downPayment);
+    if (updates.financedAmount !== undefined) cleanUpdates.financedAmount = toSafeMoney(updates.financedAmount);
+    if (updates.monthlyEmi !== undefined) cleanUpdates.monthlyEmi = toSafeMoney(updates.monthlyEmi);
+    if (updates.emiAmount !== undefined) cleanUpdates.emiAmount = toSafeMoney(updates.emiAmount);
+    if (updates.totalPayable !== undefined) cleanUpdates.totalPayable = toSafeMoney(updates.totalPayable);
+    if (updates.interestRate !== undefined) cleanUpdates.interestRate = toSafeInterestRate(updates.interestRate);
+    if (updates.tenureMonths !== undefined) cleanUpdates.tenureMonths = toSafeTenure(updates.tenureMonths, 1, 120);
 
-    // Advance next due date by 1 month from firstDueDate or current nextDueDate
-    const firstDate = emi.firstDueDate ? new Date(emi.firstDueDate) : new Date();
-    const nextDateObj = new Date(firstDate);
-    nextDateObj.setMonth(firstDate.getMonth() + newPaid);
+    const merged = { ...emi, ...cleanUpdates };
+    // Recalculate summary strictly preserving existing individual payments
+    const detailed = calculateEMIDetailedSummary(merged, emiPayments);
+
+    const finalized: EMI = {
+      ...merged,
+      paidMonths: detailed.paidInstallmentsCount,
+      paidInstallments: detailed.paidInstallmentsCount,
+      remainingInstallments: detailed.remainingInstallmentsCount,
+      nextDueDate: detailed.nextDueDate === 'Completed' ? emi.nextDueDate : detailed.nextDueDate,
+      status: detailed.isCompleted ? 'Completed' : (merged.isArchived || merged.status === 'Archived' ? 'Archived' : 'Active')
+    };
+
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'emis', id, finalized, cryptoKey);
+    } else {
+      setEmis((prev) => prev.map((e) => (e.id === id ? finalized : e)));
+    }
+  };
+
+  const recordEMIPayment = async (paymentData: {
+    emiId: string;
+    cardId: string;
+    installmentNumber: number;
+    amount: number;
+    paymentDate: string;
+    sourceAccountId?: string;
+    notes?: string;
+  }) => {
+    const emi = emis.find((e) => e.id === paymentData.emiId);
+    if (!emi) return;
+
+    const cleanAmount = toSafeMoney(paymentData.amount);
+    if (cleanAmount <= 0) return;
+
+    const newPayment: EMIPayment = {
+      id: `emipay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      emiId: paymentData.emiId,
+      cardId: paymentData.cardId || emi.cardId,
+      installmentNumber: toSafeTenure(paymentData.installmentNumber, 1, emi.tenureMonths || 120),
+      amount: cleanAmount,
+      paymentDate: paymentData.paymentDate || new Date().toISOString().split('T')[0],
+      accountId: paymentData.sourceAccountId,
+      notes: paymentData.notes?.trim() || undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Save payment record
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'emiPayments', newPayment.id, newPayment, cryptoKey);
+    } else {
+      setEmiPayments((prev) => [newPayment, ...prev]);
+    }
+
+    // 2. Recompute detailed EMI metrics
+    const allPayments = [...emiPayments, newPayment];
+    const detailed = calculateEMIDetailedSummary(emi, allPayments);
 
     const updatedEMI: EMI = {
       ...emi,
-      paidMonths: newPaid,
-      paidInstallments: newPaid,
-      remainingInstallments: Math.max(0, emi.tenureMonths - newPaid),
-      status: isCompleted ? 'Completed' : 'Active',
-      nextDueDate: isCompleted ? emi.nextDueDate : nextDateObj.toISOString().split('T')[0]
+      paidMonths: detailed.paidInstallmentsCount,
+      paidInstallments: detailed.paidInstallmentsCount,
+      remainingInstallments: detailed.remainingInstallmentsCount,
+      nextDueDate: detailed.nextDueDate === 'Completed' ? emi.nextDueDate : detailed.nextDueDate,
+      status: detailed.isCompleted ? 'Completed' : (emi.isArchived || emi.status === 'Archived' ? 'Archived' : 'Active'),
+      updatedAt: new Date().toISOString()
     };
 
     if (firebaseUser) {
@@ -1132,14 +1253,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setEmis((prev) => prev.map((e) => (e.id === emi.id ? updatedEMI : e)));
     }
 
-    // Deduct from Source Account if provided
-    if (sourceAccountId) {
-      const sourceAcc = accounts.find((a) => a.id === sourceAccountId);
+    // 3. Deduct from Source Account if provided
+    if (paymentData.sourceAccountId) {
+      const sourceAcc = accounts.find((a) => a.id === paymentData.sourceAccountId);
       if (sourceAcc) {
         const curBal = toSafeSignedMoney(sourceAcc.currentBalance);
         const updatedAcc = {
           ...sourceAcc,
-          currentBalance: safeRound(curBal - emiAmt)
+          currentBalance: safeRound(curBal - cleanAmount)
         };
         if (firebaseUser) {
           await saveUserDoc(firebaseUser.uid, 'accounts', sourceAcc.id, updatedAcc, cryptoKey);
@@ -1148,14 +1269,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
 
         const newTxn: Transaction = {
-          id: `txn_emi_${Date.now()}`,
+          id: `txn_emipay_${Date.now()}`,
           userId: user.id,
           type: 'transfer',
-          amount: emiAmt,
+          amount: cleanAmount,
           category: 'EMI Payment',
-          description: `EMI Payment: ${emi.purchaseTitle || emi.title} (${newPaid}/${emi.tenureMonths})`,
-          date: new Date().toISOString().split('T')[0],
+          description: `EMI Payment: ${emi.purchaseTitle || emi.title} (Inst #${newPayment.installmentNumber})`,
+          date: newPayment.paymentDate,
           accountId: sourceAcc.id,
+          notes: newPayment.notes || `Installment #${newPayment.installmentNumber} payment for ${emi.purchaseTitle || emi.title}`,
           createdAt: new Date().toISOString()
         };
 
@@ -1168,6 +1290,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const payEMIInstallment = async (emiId: string, sourceAccountId?: string) => {
+    const emi = emis.find((e) => e.id === emiId);
+    if (!emi) return;
+
+    const detailed = calculateEMIDetailedSummary(emi, emiPayments);
+    const targetInstallmentNum = detailed.nextInstallmentNumber || 1;
+    const targetInstallment = detailed.installments.find((i) => i.installmentNumber === targetInstallmentNum);
+    const requiredAmount = targetInstallment?.remainingAmount && targetInstallment.remainingAmount > 0
+      ? targetInstallment.remainingAmount
+      : (emi.monthlyEmi || emi.emiAmount || 0);
+
+    await recordEMIPayment({
+      emiId: emi.id,
+      cardId: emi.cardId,
+      installmentNumber: targetInstallmentNum,
+      amount: requiredAmount,
+      paymentDate: new Date().toISOString().split('T')[0],
+      sourceAccountId,
+      notes: `Installment #${targetInstallmentNum} Payment`
+    });
+  };
+
   const precloseEMI = async (emiId: string, precloseAmount: number, sourceAccountId?: string) => {
     const emi = emis.find((e) => e.id === emiId);
     if (!emi) return;
@@ -1178,7 +1322,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       paidMonths: emi.tenureMonths,
       paidInstallments: emi.tenureMonths,
       remainingInstallments: 0,
-      status: 'Preclosed'
+      status: 'Preclosed',
+      updatedAt: new Date().toISOString()
     };
 
     if (firebaseUser) {
@@ -1222,26 +1367,282 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addLoan = async (loanData: Omit<Loan, 'id'>) => {
+  const archiveEMI = async (id: string) => {
+    const emi = emis.find((e) => e.id === id);
+    if (!emi) return;
+    const updated: EMI = {
+      ...emi,
+      status: 'Archived',
+      isArchived: true,
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'emis', id, updated, cryptoKey);
+    } else {
+      setEmis((prev) => prev.map((e) => (e.id === id ? updated : e)));
+    }
+  };
+
+  const restoreEMI = async (id: string) => {
+    const emi = emis.find((e) => e.id === id);
+    if (!emi) return;
+    const detailed = calculateEMIDetailedSummary(emi, emiPayments);
+    const updated: EMI = {
+      ...emi,
+      status: detailed.isCompleted ? 'Completed' : 'Active',
+      isArchived: false,
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'emis', id, updated, cryptoKey);
+    } else {
+      setEmis((prev) => prev.map((e) => (e.id === id ? updated : e)));
+    }
+  };
+
+  const deleteEMI = async (id: string, softDelete: boolean = true) => {
+    if (softDelete) {
+      const emi = emis.find((e) => e.id === id);
+      if (!emi) return;
+      const updated: EMI = {
+        ...emi,
+        isDeleted: true,
+        status: 'Cancelled',
+        updatedAt: new Date().toISOString()
+      };
+      if (firebaseUser) {
+        await saveUserDoc(firebaseUser.uid, 'emis', id, updated, cryptoKey);
+      } else {
+        setEmis((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      }
+    } else {
+      if (firebaseUser) {
+        await deleteUserDoc(firebaseUser.uid, 'emis', id);
+      } else {
+        setEmis((prev) => prev.filter((e) => e.id !== id));
+      }
+    }
+  };
+
+  const addLoan = async (loanData: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>) => {
     const cleanPrincipal = toSafeMoney(loanData.principal);
-    const cleanOutstanding = toSafeMoney(loanData.outstandingPrincipal ?? cleanPrincipal);
-    const cleanEmi = toSafeMoney(loanData.emiAmount);
     const cleanRate = toSafeInterestRate(loanData.interestRate);
     const cleanTenure = toSafeTenure(loanData.tenureMonths, 1, 480);
+    const interestType: LoanInterestType = loanData.interestType || 'Reducing Balance';
+    const cleanEmi = toSafeMoney(
+      loanData.emiAmount && loanData.emiAmount > 0
+        ? loanData.emiAmount
+        : calculateLoanEMI(cleanPrincipal, cleanRate, cleanTenure, interestType)
+    );
+    const dueDay = Math.min(31, Math.max(1, loanData.dueDay || loanData.paymentDayOfMonth || 10));
 
     const newLoan: Loan = {
       ...loanData,
       principal: cleanPrincipal,
-      outstandingPrincipal: cleanOutstanding,
+      outstandingPrincipal: cleanPrincipal,
       emiAmount: cleanEmi,
       interestRate: cleanRate,
+      interestType,
       tenureMonths: cleanTenure,
-      id: `loan_${Date.now()}`
+      dueDay,
+      paymentDayOfMonth: dueDay,
+      status: 'Active',
+      isArchived: false,
+      isDeleted: false,
+      id: `loan_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
+
     if (firebaseUser) {
       await saveUserDoc(firebaseUser.uid, 'loans', newLoan.id, newLoan, cryptoKey);
     } else {
       setLoans((prev) => [...prev, newLoan]);
+    }
+  };
+
+  const editLoan = async (id: string, updates: Partial<Loan>) => {
+    const existingLoan = loans.find((l) => l.id === id);
+    if (!existingLoan) return;
+
+    const cleanPrincipal = updates.principal !== undefined ? toSafeMoney(updates.principal) : existingLoan.principal;
+    const cleanRate = updates.interestRate !== undefined ? toSafeInterestRate(updates.interestRate) : existingLoan.interestRate;
+    const cleanTenure = updates.tenureMonths !== undefined ? toSafeTenure(updates.tenureMonths, 1, 480) : existingLoan.tenureMonths;
+    const interestType: LoanInterestType = updates.interestType || existingLoan.interestType || 'Reducing Balance';
+    const cleanEmi = updates.emiAmount !== undefined && updates.emiAmount > 0
+      ? toSafeMoney(updates.emiAmount)
+      : calculateLoanEMI(cleanPrincipal, cleanRate, cleanTenure, interestType);
+    const dueDay = updates.dueDay !== undefined
+      ? Math.min(31, Math.max(1, updates.dueDay))
+      : (existingLoan.dueDay || existingLoan.paymentDayOfMonth || 10);
+
+    const updatedLoan: Loan = {
+      ...existingLoan,
+      ...updates,
+      principal: cleanPrincipal,
+      interestRate: cleanRate,
+      interestType,
+      tenureMonths: cleanTenure,
+      emiAmount: cleanEmi,
+      dueDay,
+      paymentDayOfMonth: dueDay,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Note: Historical payment records are strictly preserved!
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'loans', id, updatedLoan, cryptoKey);
+    } else {
+      setLoans((prev) => prev.map((l) => (l.id === id ? updatedLoan : l)));
+    }
+  };
+
+  const recordLoanPayment = async (paymentData: {
+    loanId: string;
+    installmentNumber: number;
+    amount: number;
+    paymentDate: string;
+    principalComponent?: number;
+    interestComponent?: number;
+    sourceAccountId?: string;
+    notes?: string;
+  }) => {
+    const loan = loans.find((l) => l.id === paymentData.loanId);
+    if (!loan) return;
+
+    const cleanAmount = toSafeMoney(paymentData.amount);
+    if (cleanAmount <= 0) return;
+
+    // Calculate default principal/interest breakdown from amortization schedule if not specified
+    let prinComp = paymentData.principalComponent !== undefined ? toSafeMoney(paymentData.principalComponent) : 0;
+    let intComp = paymentData.interestComponent !== undefined ? toSafeMoney(paymentData.interestComponent) : 0;
+
+    if (prinComp === 0 && intComp === 0) {
+      const schedule = calculateLoanAmortizationSchedule(loan, loanPayments);
+      const row = schedule.find((r) => r.installmentNumber === paymentData.installmentNumber);
+      if (row) {
+        intComp = safeRound(Math.min(cleanAmount, row.interestComponent));
+        prinComp = safeRound(Math.max(0, cleanAmount - intComp));
+      } else {
+        prinComp = cleanAmount;
+        intComp = 0;
+      }
+    }
+
+    const paymentId = `lp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const newPayment: LoanPayment = {
+      id: paymentId,
+      loanId: loan.id,
+      userId: user.id,
+      installmentNumber: paymentData.installmentNumber,
+      amount: cleanAmount,
+      paymentDate: paymentData.paymentDate || new Date().toISOString().split('T')[0],
+      principalComponent: prinComp,
+      interestComponent: intComp,
+      accountId: paymentData.sourceAccountId,
+      notes: paymentData.notes,
+      status: 'Paid',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Save payment record
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'loanPayments', paymentId, newPayment, cryptoKey);
+    } else {
+      setLoanPayments((prev) => [...prev, newPayment]);
+    }
+
+    // 2. Adjust source account balance if provided
+    if (paymentData.sourceAccountId) {
+      const acc = accounts.find((a) => a.id === paymentData.sourceAccountId);
+      if (acc) {
+        const updatedBalance = safeRound(acc.currentBalance - cleanAmount);
+        const updatedAcc: Account = {
+          ...acc,
+          currentBalance: updatedBalance
+        };
+        if (firebaseUser) {
+          await saveUserDoc(firebaseUser.uid, 'accounts', acc.id, updatedAcc, cryptoKey);
+        } else {
+          setAccounts((prev) => prev.map((a) => (a.id === acc.id ? updatedAcc : a)));
+        }
+      }
+    }
+
+    // 3. Log ledger transaction
+    const txnId = `txn_loan_${Date.now()}`;
+    const newTxn: Transaction = {
+      id: txnId,
+      userId: user.id,
+      accountId: paymentData.sourceAccountId || accounts.find((a) => a.isActive)?.id || '',
+      amount: cleanAmount,
+      type: 'expense',
+      category: 'Loan / EMI',
+      description: `Loan Payment: ${loan.loanName} (Installment #${paymentData.installmentNumber})`,
+      date: paymentData.paymentDate || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'transactions', txnId, newTxn, cryptoKey);
+    } else {
+      setTransactions((prev) => [newTxn, ...prev]);
+    }
+  };
+
+  const archiveLoan = async (id: string) => {
+    const loan = loans.find((l) => l.id === id);
+    if (!loan) return;
+    const updated: Loan = {
+      ...loan,
+      status: 'Archived',
+      isArchived: true,
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'loans', id, updated, cryptoKey);
+    } else {
+      setLoans((prev) => prev.map((l) => (l.id === id ? updated : l)));
+    }
+  };
+
+  const restoreLoan = async (id: string) => {
+    const loan = loans.find((l) => l.id === id);
+    if (!loan) return;
+    const detailed = calculateLoanDetailedSummary(loan, loanPayments);
+    const updated: Loan = {
+      ...loan,
+      status: detailed.isCompleted ? 'Completed' : 'Active',
+      isArchived: false,
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'loans', id, updated, cryptoKey);
+    } else {
+      setLoans((prev) => prev.map((l) => (l.id === id ? updated : l)));
+    }
+  };
+
+  const deleteLoan = async (id: string, softDelete: boolean = true) => {
+    if (softDelete) {
+      const loan = loans.find((l) => l.id === id);
+      if (!loan) return;
+      const updated: Loan = {
+        ...loan,
+        isDeleted: true,
+        updatedAt: new Date().toISOString()
+      };
+      if (firebaseUser) {
+        await saveUserDoc(firebaseUser.uid, 'loans', id, updated, cryptoKey);
+      } else {
+        setLoans((prev) => prev.map((l) => (l.id === id ? updated : l)));
+      }
+    } else {
+      if (firebaseUser) {
+        await deleteUserDoc(firebaseUser.uid, 'loans', id);
+      } else {
+        setLoans((prev) => prev.filter((l) => l.id !== id));
+      }
     }
   };
 
@@ -1636,7 +2037,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         cardStatements,
         cardPayments,
         emis,
+        emiPayments,
         loans,
+        loanPayments,
         budgets,
         goals,
         reminders,
@@ -1689,9 +2092,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         recordCardPayment,
         addEMI,
         updateEMI,
+        editEMI,
+        recordEMIPayment,
         payEMIInstallment,
         precloseEMI,
+        archiveEMI,
+        restoreEMI,
+        deleteEMI,
         addLoan,
+        editLoan,
+        recordLoanPayment,
+        archiveLoan,
+        restoreLoan,
+        deleteLoan,
         addBudget,
         updateBudget,
         deleteBudget,

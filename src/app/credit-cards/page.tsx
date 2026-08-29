@@ -21,6 +21,7 @@ import {
   Archive,
   RotateCcw,
   Pencil,
+  Trash2,
   X,
   Building2,
   Wallet,
@@ -42,10 +43,13 @@ import {
   calculateEMIFinancials,
   calculateOngoingEMIFinancials,
   calculateDerivedInterestRate,
+  calculateEMIDetailedSummary,
   generateEMISchedule,
   getNextBillingDates,
   getRelativeDueLabel
 } from '@/lib/calculations';
+import { MAX_SAFE_TRANSACTION_AMOUNT } from '@/lib/moneySafe';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import {
   CreditCard,
   CreditCardStatement,
@@ -56,6 +60,7 @@ import {
   CardPaymentType,
   EMIType,
   EMI,
+  EMIPayment,
   Transaction
 } from '@/lib/types';
 import { POPULAR_BANKS, BankDefinition } from '@/lib/banks';
@@ -77,6 +82,7 @@ export default function CreditCardsPage() {
     cardStatements,
     cardPayments,
     emis,
+    emiPayments,
     transactions,
     accounts,
     addCreditCard,
@@ -86,15 +92,20 @@ export default function CreditCardsPage() {
     recordCardPayment,
     addEMI,
     updateEMI,
+    editEMI,
+    recordEMIPayment,
     payEMIInstallment,
     precloseEMI,
+    archiveEMI,
+    restoreEMI,
+    deleteEMI,
     user
   } = useData();
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [cardFilter, setCardFilter] = useState<'All' | 'Active' | 'Archived' | 'High Utilization' | 'Payment Due'>('Active');
-  const [emiFilter, setEmiFilter] = useState<'All' | 'Active' | 'Completed' | 'Overdue'>('Active');
+  const [emiFilter, setEmiFilter] = useState<'Active' | 'Completed' | 'Archived' | 'All'>('Active');
 
   // Modals & Drawers State
   const [isAddCardOpen, setIsAddCardOpen] = useState(false);
@@ -140,12 +151,46 @@ export default function CreditCardsPage() {
 
   // Action Menu state with click-outside & escape listeners
   const [activeMenuCardId, setActiveMenuCardId] = useState<string | null>(null);
+  const [activeMenuEmiId, setActiveMenuEmiId] = useState<string | null>(null);
 
-  // Close menus on Escape key
+  // Edit EMI Modal State
+  const [isEditEMIOpen, setIsEditEMIOpen] = useState(false);
+  const [editingEMI, setEditingEMI] = useState<EMI | null>(null);
+  const [editEmiTitle, setEditEmiTitle] = useState('');
+  const [editEmiCardId, setEditEmiCardId] = useState('');
+  const [editEmiPurchaseAmount, setEditEmiPurchaseAmount] = useState('');
+  const [editEmiDownPayment, setEditEmiDownPayment] = useState('0');
+  const [editEmiMonthlyAmount, setEditEmiMonthlyAmount] = useState('');
+  const [editEmiTenureMonths, setEditEmiTenureMonths] = useState('12');
+  const [editEmiInterestRate, setEditEmiInterestRate] = useState('0');
+  const [editEmiStartDate, setEditEmiStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [editEmiDueDay, setEditEmiDueDay] = useState('5');
+  const [editEmiNotes, setEditEmiNotes] = useState('');
+
+  // Record EMI Payment Modal State
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [recordingEMI, setRecordingEMI] = useState<EMI | null>(null);
+  const [recordInstallmentNum, setRecordInstallmentNum] = useState<number>(1);
+  const [recordPaymentAmount, setRecordPaymentAmount] = useState('');
+  const [recordPaymentDate, setRecordPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [recordSourceAccountId, setRecordSourceAccountId] = useState('');
+  const [recordPaymentNotes, setRecordPaymentNotes] = useState('');
+
+  // Payment History Dialog State
+  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+  const [historyEMI, setHistoryEMI] = useState<EMI | null>(null);
+
+  // Delete EMI Confirmation Modal State
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deletingEMI, setDeletingEMI] = useState<EMI | null>(null);
+  const [isDeletingEMI, setIsDeletingEMI] = useState(false);
+
+  // Close menus & modals on Escape key or outside click
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setActiveMenuCardId(null);
+        setActiveMenuEmiId(null);
         setIsAddCardOpen(false);
         setIsEditCardOpen(false);
         setIsPaymentModalOpen(false);
@@ -154,10 +199,24 @@ export default function CreditCardsPage() {
         setScheduleEMI(null);
         setPrecloseEMIData(null);
         setDrawerCard(null);
+        setIsEditEMIOpen(false);
+        setIsRecordPaymentOpen(false);
+        setIsPaymentHistoryOpen(false);
+        setIsDeleteConfirmOpen(false);
       }
     };
+
+    const handleClickOutside = () => {
+      setActiveMenuCardId(null);
+      setActiveMenuEmiId(null);
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('click', handleClickOutside);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('click', handleClickOutside);
+    };
   }, []);
 
   // New/Edit Card Form State
@@ -183,7 +242,7 @@ export default function CreditCardsPage() {
     calculateCreditCardSummary(creditCards);
   const utilStatus = getCreditUtilizationStatus(overallUtilization);
   const { monthlyCommitment, totalRemainingDebt, activeCount: activeEmiCount } =
-    calculateMonthlyEMICommitment(emis);
+    calculateMonthlyEMICommitment(emis, emiPayments);
 
   // Live calculation for Convert / Add EMI modal
   const emiLiveCalculations = useMemo(() => {
@@ -297,27 +356,27 @@ export default function CreditCardsPage() {
   // Filtered EMIs
   const filteredEMIs = useMemo(() => {
     return emis.filter((emi) => {
+      if (emi.isDeleted) return false;
+
+      const summary = calculateEMIDetailedSummary(emi, emiPayments);
       const matchesSearch =
-        emi.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (emi.purchaseTitle && emi.purchaseTitle.toLowerCase().includes(searchQuery.toLowerCase()));
+        (emi.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (emi.purchaseTitle || '').toLowerCase().includes(searchQuery.toLowerCase());
 
       if (!matchesSearch) return false;
 
-      const isCompleted = emi.status === 'Completed' || (emi.paidInstallments ?? emi.paidMonths ?? 0) >= emi.tenureMonths;
-
-      if (emiFilter === 'Active') return !isCompleted && emi.status !== 'Cancelled' && emi.status !== 'Preclosed';
-      if (emiFilter === 'Completed') return isCompleted || emi.status === 'Preclosed';
-      if (emiFilter === 'Overdue') {
-        if (isCompleted || emi.status === 'Cancelled' || emi.status === 'Preclosed') return false;
-        const nextDue = emi.nextDueDate ? new Date(emi.nextDueDate) : null;
-        if (!nextDue) return false;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return nextDue < today;
+      if (emiFilter === 'Active') {
+        return !summary.isArchived && !summary.isCompleted && emi.status !== 'Cancelled';
+      }
+      if (emiFilter === 'Completed') {
+        return !summary.isArchived && (summary.isCompleted || emi.status === 'Completed' || emi.status === 'Preclosed');
+      }
+      if (emiFilter === 'Archived') {
+        return summary.isArchived;
       }
       return true;
     });
-  }, [emis, searchQuery, emiFilter]);
+  }, [emis, emiPayments, searchQuery, emiFilter]);
 
   // Dynamic Upcoming Payments Aggregation with real relative countdowns
   const upcomingPayments = useMemo(() => {
@@ -567,6 +626,124 @@ export default function CreditCardsPage() {
     if (!payingEMI) return;
     payEMIInstallment(payingEMI.id, emiPaySourceAccountId || undefined);
     setPayingEMI(null);
+  };
+
+  // Open Edit EMI Modal
+  const handleOpenEditEMI = (emi: EMI) => {
+    setEditingEMI(emi);
+    setEditEmiTitle(emi.purchaseTitle || emi.title || '');
+    setEditEmiCardId(emi.cardId || creditCards[0]?.id || '');
+    setEditEmiPurchaseAmount((emi.purchaseAmount || emi.principalAmount || '').toString());
+    setEditEmiDownPayment((emi.downPayment || 0).toString());
+    setEditEmiMonthlyAmount((emi.monthlyEmi || emi.emiAmount || '').toString());
+    setEditEmiTenureMonths((emi.tenureMonths || 12).toString());
+    setEditEmiInterestRate((emi.interestRate || 0).toString());
+    setEditEmiStartDate(emi.startDate || emi.firstDueDate || new Date().toISOString().split('T')[0]);
+    setEditEmiDueDay((emi.dueDay || 5).toString());
+    setEditEmiNotes(emi.notes || '');
+    setIsEditEMIOpen(true);
+    setActiveMenuEmiId(null);
+  };
+
+  // Submit Edit EMI
+  const handleSaveEditEMI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEMI) return;
+    const purchAmt = parseFloat(editEmiPurchaseAmount);
+    const downAmt = parseFloat(editEmiDownPayment) || 0;
+    const monthlyAmt = parseFloat(editEmiMonthlyAmount) || 0;
+    const tenure = parseInt(editEmiTenureMonths, 10) || 12;
+    const interest = parseFloat(editEmiInterestRate) || 0;
+    const dueDayNum = parseInt(editEmiDueDay, 10) || 5;
+
+    if (!editEmiTitle.trim() || isNaN(purchAmt) || purchAmt <= 0) return;
+
+    await editEMI(editingEMI.id, {
+      title: editEmiTitle.trim(),
+      purchaseTitle: editEmiTitle.trim(),
+      cardId: editEmiCardId,
+      purchaseAmount: purchAmt,
+      downPayment: downAmt,
+      financedAmount: Math.max(0, purchAmt - downAmt),
+      monthlyEmi: monthlyAmt > 0 ? monthlyAmt : Math.round(Math.max(0, purchAmt - downAmt) / tenure),
+      emiAmount: monthlyAmt > 0 ? monthlyAmt : Math.round(Math.max(0, purchAmt - downAmt) / tenure),
+      tenureMonths: tenure,
+      interestRate: interest,
+      startDate: editEmiStartDate,
+      firstDueDate: editEmiStartDate,
+      dueDay: dueDayNum,
+      notes: editEmiNotes.trim() || undefined
+    });
+
+    setIsEditEMIOpen(false);
+    setEditingEMI(null);
+  };
+
+  // Open Record Payment Modal
+  const handleOpenRecordPayment = (emi: EMI, defaultInstallmentNum?: number) => {
+    const summary = calculateEMIDetailedSummary(emi, emiPayments);
+    const targetInstNum = defaultInstallmentNum || summary.nextInstallmentNumber || 1;
+    const inst = summary.installments.find((i) => i.installmentNumber === targetInstNum);
+    const defaultAmt = inst?.remainingAmount && inst.remainingAmount > 0
+      ? inst.remainingAmount
+      : (emi.monthlyEmi || emi.emiAmount || 0);
+
+    setRecordingEMI(emi);
+    setRecordInstallmentNum(targetInstNum);
+    setRecordPaymentAmount(defaultAmt > 0 ? defaultAmt.toString() : '');
+    setRecordPaymentDate(new Date().toISOString().split('T')[0]);
+    setRecordSourceAccountId(accounts.find((a) => a.isActive)?.id || '');
+    setRecordPaymentNotes('');
+    setIsRecordPaymentOpen(true);
+    setActiveMenuEmiId(null);
+  };
+
+  // Submit Record Payment
+  const handleSaveRecordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recordingEMI) return;
+    const amt = parseFloat(recordPaymentAmount);
+    if (isNaN(amt) || amt <= 0 || amt > MAX_SAFE_TRANSACTION_AMOUNT) return;
+
+    await recordEMIPayment({
+      emiId: recordingEMI.id,
+      cardId: recordingEMI.cardId,
+      installmentNumber: recordInstallmentNum,
+      amount: amt,
+      paymentDate: recordPaymentDate,
+      sourceAccountId: recordSourceAccountId || undefined,
+      notes: recordPaymentNotes.trim() || undefined
+    });
+
+    setIsRecordPaymentOpen(false);
+    setRecordingEMI(null);
+  };
+
+  // Open Payment History Dialog
+  const handleOpenPaymentHistory = (emi: EMI) => {
+    setHistoryEMI(emi);
+    setIsPaymentHistoryOpen(true);
+    setActiveMenuEmiId(null);
+  };
+
+  // Open Delete EMI Confirmation
+  const handleOpenDeleteEMI = (emi: EMI) => {
+    setDeletingEMI(emi);
+    setIsDeleteConfirmOpen(true);
+    setActiveMenuEmiId(null);
+  };
+
+  // Confirm Delete EMI
+  const handleConfirmDeleteEMI = async () => {
+    if (!deletingEMI) return;
+    setIsDeletingEMI(true);
+    try {
+      await deleteEMI(deletingEMI.id, true);
+    } finally {
+      setIsDeletingEMI(false);
+      setIsDeleteConfirmOpen(false);
+      setDeletingEMI(null);
+    }
   };
 
   // Open Convert / Add EMI Modal
@@ -1112,10 +1289,10 @@ export default function CreditCardsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Filter Tabs */}
             <div className="flex items-center gap-1 glass-subtle p-1 rounded-2xl">
-              {(['Active', 'All', 'Completed', 'Overdue'] as const).map((tab) => (
+              {(['Active', 'Completed', 'Archived', 'All'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setEmiFilter(tab)}
@@ -1142,58 +1319,160 @@ export default function CreditCardsPage() {
         {filteredEMIs.length === 0 ? (
           <div className="p-8 text-center space-y-2 glass-subtle rounded-2xl">
             <Zap className="w-8 h-8 text-slate-400 mx-auto" />
-            <h4 className="font-black text-sm text-slate-900 dark:text-white">No active EMIs.</h4>
+            <h4 className="font-black text-sm text-slate-900 dark:text-white">
+              {emiFilter === 'Archived'
+                ? 'No archived EMIs.'
+                : emiFilter === 'Completed'
+                ? 'No completed EMIs yet.'
+                : 'No active EMIs.'}
+            </h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Convert a purchase into an EMI to track installments.
+              {emiFilter === 'Archived'
+                ? 'Archived installment plans will appear here.'
+                : 'Convert a purchase into an EMI to track installments.'}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredEMIs.map((emi) => {
               const targetCard = creditCards.find((c) => c.id === emi.cardId);
-              const paidCount = emi.paidInstallments ?? emi.paidMonths ?? 0;
-              const emiAmt = emi.monthlyEmi || emi.emiAmount || 0;
-              const total = emi.totalPayable ?? emi.purchaseAmount;
-              const paidAmt = paidCount * emiAmt;
-              const remainingPrincipal = Math.max(0, total - paidAmt);
-              const progressPct = Math.round((paidCount / emi.tenureMonths) * 100);
-              const isCompleted = emi.status === 'Completed' || paidCount >= emi.tenureMonths;
+              const summary = calculateEMIDetailedSummary(emi, emiPayments);
 
               return (
-                <div key={emi.id} className="p-5 sm:p-6 rounded-3xl glass-subtle space-y-4 glass-interactive">
+                <div
+                  key={emi.id}
+                  className={`p-5 sm:p-6 rounded-3xl glass-subtle space-y-4 glass-interactive transition-all relative ${
+                    summary.isArchived ? 'opacity-75 grayscale-[0.2]' : ''
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-extrabold text-base text-slate-900 dark:text-white truncate">
                           {emi.purchaseTitle || emi.title}
                         </h3>
                         <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-brand-500/10 text-brand-600 border border-brand-500/20">
                           {emi.emiType || 'EMI'}
                         </span>
+                        {summary.isArchived && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                            Archived
+                          </span>
+                        )}
+                        {summary.isCompleted && !summary.isArchived && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            Completed
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-400 font-medium mt-0.5">
+                      <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">
                         Card: {targetCard?.cardName || 'Credit Card'} (•••• {targetCard?.last4Digits || '0000'})
                       </p>
                     </div>
 
-                    <span className="px-3 py-1 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 font-black text-xs border border-brand-500/30 shrink-0">
-                      {formatCurrency(emiAmt)} / mo
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-3 py-1 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 font-black text-xs border border-brand-500/30">
+                        {formatCurrency(summary.emiAmount)} / mo
+                      </span>
+
+                      {/* 3-Dot Action Menu */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuEmiId(activeMenuEmiId === emi.id ? null : emi.id);
+                          }}
+                          className="p-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                          title="EMI actions"
+                          aria-label="EMI actions"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {activeMenuEmiId === emi.id && (
+                          <div
+                            className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 ring-1 ring-black/10 py-1.5 z-50 animate-fadeIn"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => handleOpenEditEMI(emi)}
+                              className="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Edit EMI</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenRecordPayment(emi)}
+                              className="w-full px-4 py-2.5 text-left text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2.5 cursor-pointer transition-colors"
+                            >
+                              <DollarSign className="w-3.5 h-3.5" />
+                              <span>Record Payment</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenPaymentHistory(emi)}
+                              className="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer transition-colors"
+                            >
+                              <Receipt className="w-3.5 h-3.5 text-indigo-400" />
+                              <span>View Payment History</span>
+                            </button>
+
+                            <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                            {summary.isArchived ? (
+                              <button
+                                onClick={() => {
+                                  setActiveMenuEmiId(null);
+                                  restoreEMI(emi.id);
+                                }}
+                                className="w-full px-4 py-2.5 text-left text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 flex items-center gap-2.5 cursor-pointer transition-colors"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Restore to Active</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setActiveMenuEmiId(null);
+                                  archiveEMI(emi.id);
+                                }}
+                                className="w-full px-4 py-2.5 text-left text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2.5 cursor-pointer transition-colors"
+                              >
+                                <Archive className="w-3.5 h-3.5" />
+                                <span>Archive EMI</span>
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleOpenDeleteEMI(emi)}
+                              className="w-full px-4 py-2.5 text-left text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2.5 cursor-pointer transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete EMI</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs text-slate-400 font-semibold">
                       <span>
-                        {paidCount} of {emi.tenureMonths} installments paid
+                        {summary.paidInstallmentsCount} of {summary.totalTenure} installments fully paid
+                        {summary.partiallyPaidCount > 0 && ` (${summary.partiallyPaidCount} partial)`}
                       </span>
-                      <span className="font-black text-brand-600 dark:text-brand-400">{progressPct}%</span>
+                      <span className="font-black text-brand-600 dark:text-brand-400">
+                        {summary.progressPercentage}%
+                      </span>
                     </div>
 
                     <div className="w-full h-2.5 rounded-full bg-slate-200/60 dark:bg-slate-800/80 overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-brand-600 to-indigo-600 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, progressPct)}%` }}
+                        style={{ width: `${Math.min(100, summary.progressPercentage)}%` }}
                       />
                     </div>
                   </div>
@@ -1203,53 +1482,57 @@ export default function CreditCardsPage() {
                     <div>
                       <span className="text-slate-400 font-medium text-[11px]">Original</span>
                       <p className="font-black text-slate-900 dark:text-white mt-0.5">
-                        {formatCurrency(emi.purchaseAmount)}
+                        {formatCurrency(summary.originalAmount)}
                       </p>
                     </div>
                     <div>
                       <span className="text-slate-400 font-medium text-[11px]">Paid</span>
                       <p className="font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        {formatCurrency(paidAmt)}
+                        {formatCurrency(summary.totalPaid)}
                       </p>
                     </div>
                     <div>
                       <span className="text-slate-400 font-medium text-[11px]">Remaining</span>
                       <p className="font-black text-rose-600 dark:text-rose-400 mt-0.5">
-                        {formatCurrency(remainingPrincipal)}
+                        {formatCurrency(summary.totalOutstanding)}
                       </p>
                     </div>
                     <div>
                       <span className="text-slate-400 font-medium text-[11px]">Next Due</span>
                       <p className="font-black text-slate-900 dark:text-white mt-0.5">
-                        {isCompleted ? 'Done' : emi.nextDueDate}
+                        {summary.isCompleted ? 'Done' : summary.nextDueDate}
                       </p>
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-end gap-2 pt-2">
+                  {/* Subtle Action Footer */}
+                  <div className="flex items-center justify-between gap-2 pt-2">
                     <button
-                      onClick={() => setScheduleEMI(emi)}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                      onClick={() => handleOpenPaymentHistory(emi)}
+                      className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer flex items-center gap-1.5"
                     >
-                      View Schedule
+                      <Receipt className="w-3.5 h-3.5" />
+                      <span>View History & Schedule</span>
                     </button>
-                    {!isCompleted && (
-                      <>
-                        <button
-                          onClick={() => handleOpenPreclose(emi)}
-                          className="px-3 py-1.5 rounded-xl border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          Pre-close
-                        </button>
-                        <button
-                          onClick={() => handleOpenPayEMI(emi)}
-                          className="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md shadow-brand-500/20"
-                        >
-                          Pay Installment
-                        </button>
-                      </>
-                    )}
+
+                    <div className="flex items-center gap-2">
+                      {!summary.isCompleted && !summary.isArchived && (
+                        <>
+                          <button
+                            onClick={() => handleOpenPreclose(emi)}
+                            className="px-3 py-1.5 rounded-xl border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            Pre-close
+                          </button>
+                          <button
+                            onClick={() => handleOpenRecordPayment(emi)}
+                            className="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-md shadow-brand-500/20"
+                          >
+                            Record Payment
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -2926,6 +3209,681 @@ export default function CreditCardsPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* EDIT EMI MODAL (With Payment Preservation Guard) */}
+      {isEditEMIOpen && editingEMI && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div
+            className="fixed inset-0 bg-slate-950/65 backdrop-blur-md"
+            onClick={() => setIsEditEMIOpen(false)}
+          />
+          <div className="relative w-full max-w-lg glass-panel bg-white/98 dark:bg-slate-900/98 rounded-3xl shadow-2xl z-10 border border-white/40 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-200/50 dark:border-white/10 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center border border-purple-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Edit EMI Plan</h3>
+                  <p className="text-xs text-slate-400">Update installment parameters and linked account</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditEMIOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Form */}
+            <form id="edit-emi-form" onSubmit={handleSaveEditEMI} className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Payment Preservation Warning Banner */}
+              {(emiPayments.filter((p) => p.emiId === editingEMI.id).length > 0 ||
+                (editingEMI.paidInstallments ?? editingEMI.paidMonths ?? 0) > 0) && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-300 text-xs font-semibold flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Payment History Preserved:</strong> This EMI already has payments recorded. Changes will apply to future installments and will not modify existing payment history.
+                  </span>
+                </div>
+              )}
+
+              {/* Purchase Title */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                  EMI / Purchase Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. iPhone 15 Pro, MacBook, Sony Bravia"
+                  value={editEmiTitle}
+                  onChange={(e) => setEditEmiTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                  required
+                />
+              </div>
+
+              {/* Linked Card */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                  Linked Credit Card
+                </label>
+                <select
+                  value={editEmiCardId}
+                  onChange={(e) => setEditEmiCardId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                  required
+                >
+                  {creditCards
+                    .filter((c) => c.status !== 'Archived')
+                    .map((card) => (
+                      <option key={card.id} value={card.id}>
+                        {card.cardName} ({card.bank} •••• {card.last4Digits})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Original Amount & Down Payment */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Original Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={MAX_SAFE_TRANSACTION_AMOUNT}
+                    value={editEmiPurchaseAmount}
+                    onChange={(e) => setEditEmiPurchaseAmount(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none font-mono"
+                    required
+                  />
+                  {parseFloat(editEmiPurchaseAmount) > MAX_SAFE_TRANSACTION_AMOUNT && (
+                    <span className="text-[10px] text-rose-500 font-bold block mt-1">
+                      Max ₹10 Crores limit.
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Down Payment (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={parseFloat(editEmiPurchaseAmount) || MAX_SAFE_TRANSACTION_AMOUNT}
+                    value={editEmiDownPayment}
+                    onChange={(e) => setEditEmiDownPayment(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Monthly EMI & Tenure */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Monthly EMI (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={MAX_SAFE_TRANSACTION_AMOUNT}
+                    value={editEmiMonthlyAmount}
+                    onChange={(e) => setEditEmiMonthlyAmount(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Tenure (Months)
+                  </label>
+                  <select
+                    value={editEmiTenureMonths}
+                    onChange={(e) => setEditEmiTenureMonths(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                  >
+                    {[3, 6, 9, 12, 18, 24, 36, 48, 60].map((m) => (
+                      <option key={m} value={m}>
+                        {m} Months
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Interest Rate & Start Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Interest Rate (% p.a.)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={editEmiInterestRate}
+                    onChange={(e) => setEditEmiInterestRate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Start / First Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editEmiStartDate}
+                    onChange={(e) => setEditEmiStartDate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Monthly Due Day & Notes */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                  Monthly Due Day of Month (1–31)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={editEmiDueDay}
+                  onChange={(e) => setEditEmiDueDay(e.target.value)}
+                  className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                  Notes (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Purchased with 0% processing fee promo"
+                  value={editEmiNotes}
+                  onChange={(e) => setEditEmiNotes(e.target.value)}
+                  className="w-full px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+            </form>
+
+            {/* Sticky Action Footer */}
+            <div className="p-4 border-t border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 flex gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsEditEMIOpen(false)}
+                className="flex-1 py-2.5 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="edit-emi-form"
+                disabled={parseFloat(editEmiPurchaseAmount) > MAX_SAFE_TRANSACTION_AMOUNT}
+                className="flex-1 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-black shadow-lg shadow-brand-500/25 border border-white/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RECORD EMI PAYMENT MODAL (Supporting Full & Partial Payments) */}
+      {isRecordPaymentOpen && recordingEMI && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div
+            className="fixed inset-0 bg-slate-950/65 backdrop-blur-md"
+            onClick={() => setIsRecordPaymentOpen(false)}
+          />
+          <div className="relative w-full max-w-md glass-panel bg-white/98 dark:bg-slate-900/98 rounded-3xl shadow-2xl z-10 border border-white/40 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden animate-scaleUp">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-200/50 dark:border-white/10 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Record EMI Payment</h3>
+                  <p className="text-xs text-slate-400">
+                    {recordingEMI.purchaseTitle || recordingEMI.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRecordPaymentOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form id="record-payment-form" onSubmit={handleSaveRecordPayment} className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Installment Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                  Installment Number
+                </label>
+                <select
+                  value={recordInstallmentNum}
+                  onChange={(e) => {
+                    const num = parseInt(e.target.value, 10);
+                    setRecordInstallmentNum(num);
+                    const summary = calculateEMIDetailedSummary(recordingEMI, emiPayments);
+                    const inst = summary.installments.find((i) => i.installmentNumber === num);
+                    const rem = inst?.remainingAmount && inst.remainingAmount > 0
+                      ? inst.remainingAmount
+                      : (recordingEMI.monthlyEmi || recordingEMI.emiAmount || 0);
+                    setRecordPaymentAmount(rem > 0 ? rem.toString() : '');
+                  }}
+                  className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                >
+                  {calculateEMIDetailedSummary(recordingEMI, emiPayments).installments.map((inst) => (
+                    <option key={inst.installmentNumber} value={inst.installmentNumber}>
+                      Installment #{inst.installmentNumber} ({inst.status} · Due {inst.dueDate})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Installment Status Helper Card */}
+              {(() => {
+                const summary = calculateEMIDetailedSummary(recordingEMI, emiPayments);
+                const inst = summary.installments.find((i) => i.installmentNumber === recordInstallmentNum);
+                const emiAmt = inst?.emiAmount || recordingEMI.monthlyEmi || recordingEMI.emiAmount || 0;
+                const paidSoFar = inst?.paidAmount || 0;
+                const remaining = inst?.remainingAmount ?? emiAmt;
+
+                return (
+                  <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 space-y-1.5 text-xs">
+                    <div className="flex justify-between font-bold text-slate-700 dark:text-slate-200">
+                      <span>Installment #{recordInstallmentNum} Target:</span>
+                      <span>{formatCurrency(emiAmt)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 font-medium">
+                      <span>Paid so far for this installment:</span>
+                      <span className="text-emerald-600 font-bold">{formatCurrency(paidSoFar)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 font-medium">
+                      <span>Remaining for this installment:</span>
+                      <span className="text-rose-600 font-bold">{formatCurrency(remaining)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Payment Amount */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                  Payment Amount (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    max={MAX_SAFE_TRANSACTION_AMOUNT}
+                    placeholder="e.g. 2000"
+                    value={recordPaymentAmount}
+                    onChange={(e) => setRecordPaymentAmount(e.target.value)}
+                    className="w-full pl-8 pr-4 py-3 glass-input rounded-2xl text-lg font-black text-slate-900 dark:text-white focus:outline-none font-mono"
+                    required
+                  />
+                </div>
+                {parseFloat(recordPaymentAmount) > MAX_SAFE_TRANSACTION_AMOUNT && (
+                  <span className="text-[10px] text-rose-500 font-bold block mt-1">
+                    Amount cannot exceed ₹10 Crores.
+                  </span>
+                )}
+              </div>
+
+              {/* Payment Date & Source Account */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Payment Date
+                  </label>
+                  <input
+                    type="date"
+                    value={recordPaymentDate}
+                    onChange={(e) => setRecordPaymentDate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Source Account
+                  </label>
+                  <select
+                    value={recordSourceAccountId}
+                    onChange={(e) => setRecordSourceAccountId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 glass-input rounded-2xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+                  >
+                    <option value="">Manual Record (No account debit)</option>
+                    {accounts
+                      .filter((a) => a.isActive)
+                      .map((acc) => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.name} ({formatCurrency(acc.currentBalance)})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Note */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                  Payment Note (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Paid via Netbanking / UPI"
+                  value={recordPaymentNotes}
+                  onChange={(e) => setRecordPaymentNotes(e.target.value)}
+                  className="w-full px-4 py-2.5 glass-input rounded-2xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px]">
+                💡 Full and partial payments are supported. The installment will be marked <strong>Fully Paid</strong> when the complete installment amount has been settled.
+              </div>
+            </form>
+
+            {/* Action Footer */}
+            <div className="p-4 border-t border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 flex gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsRecordPaymentOpen(false)}
+                className="flex-1 py-2.5 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="record-payment-form"
+                disabled={parseFloat(recordPaymentAmount) > MAX_SAFE_TRANSACTION_AMOUNT || !recordPaymentAmount}
+                className="flex-1 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-500/25 border border-white/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                Record Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAYMENT HISTORY & DETAILED SCHEDULE DIALOG */}
+      {isPaymentHistoryOpen && historyEMI && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+            onClick={() => setIsPaymentHistoryOpen(false)}
+          />
+          <div className="relative w-full max-w-3xl glass-panel bg-white/98 dark:bg-slate-900/98 rounded-3xl p-6 sm:p-7 shadow-2xl z-10 border border-white/40 dark:border-white/10 space-y-6 max-h-[92vh] overflow-y-auto animate-scaleUp">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-200/50 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center border border-indigo-500/20">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                      {historyEMI.purchaseTitle || historyEMI.title}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-brand-500/10 text-brand-600">
+                      {historyEMI.emiType || 'EMI'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {historyEMI.tenureMonths} Months Plan • {formatCurrency(historyEMI.monthlyEmi || historyEMI.emiAmount)}/mo
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setIsPaymentHistoryOpen(false);
+                    handleOpenRecordPayment(historyEMI);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  <span>Record Payment</span>
+                </button>
+                <button
+                  onClick={() => setIsPaymentHistoryOpen(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Statistics Strip */}
+            {(() => {
+              const summary = calculateEMIDetailedSummary(historyEMI, emiPayments);
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-center">
+                  <div className="p-3 rounded-2xl glass-subtle">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Total EMIs</span>
+                    <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">
+                      {summary.totalTenure}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-2xl glass-subtle">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Fully Paid</span>
+                    <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      {summary.paidInstallmentsCount}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-2xl glass-subtle">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Partially Paid</span>
+                    <p className="text-base font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                      {summary.partiallyPaidCount}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-2xl glass-subtle">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Remaining</span>
+                    <p className="text-base font-black text-rose-600 dark:text-rose-400 mt-0.5">
+                      {summary.remainingInstallmentsCount}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-2xl glass-subtle">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Total Paid</span>
+                    <p className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
+                      {formatCurrency(summary.totalPaid)}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-2xl glass-subtle">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Outstanding</span>
+                    <p className="text-base font-black text-rose-600 dark:text-rose-400 mt-0.5 truncate">
+                      {formatCurrency(summary.totalOutstanding)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Installment Breakdown Schedule */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                Installment Schedule Breakdown
+              </h4>
+
+              <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+                {calculateEMIDetailedSummary(historyEMI, emiPayments).installments.map((inst) => {
+                  const matchingPayments = emiPayments.filter(
+                    (p) => p.emiId === historyEMI.id && p.installmentNumber === inst.installmentNumber
+                  );
+
+                  return (
+                    <div
+                      key={inst.installmentNumber}
+                      className="p-3.5 rounded-2xl glass-subtle border border-slate-200/50 dark:border-white/5 space-y-2 hover:border-brand-500/30 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs flex items-center justify-center shrink-0">
+                            #{inst.installmentNumber}
+                          </span>
+                          <div>
+                            <p className="font-bold text-xs text-slate-900 dark:text-white">
+                              {inst.status === 'Paid' ? (
+                                <span>{formatCurrency(inst.paidAmount || inst.emiAmount)}</span>
+                              ) : inst.status === 'Partially Paid' ? (
+                                <span>
+                                  {formatCurrency(inst.paidAmount || 0)} / {formatCurrency(inst.emiAmount)}
+                                </span>
+                              ) : (
+                                <span>{formatCurrency(inst.emiAmount)}</span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              {inst.status === 'Paid' && inst.paymentDate
+                                ? `Paid on ${inst.paymentDate}`
+                                : `Due ${inst.dueDate}`}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                              inst.status === 'Paid'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                : inst.status === 'Partially Paid'
+                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                                : inst.status === 'Overdue'
+                                ? 'bg-rose-500/15 text-rose-600'
+                                : inst.status === 'Due'
+                                ? 'bg-purple-500/15 text-purple-600'
+                                : 'bg-slate-200/50 dark:bg-slate-800 text-slate-400'
+                            }`}
+                          >
+                            {inst.status}
+                          </span>
+
+                          {inst.status !== 'Paid' && (
+                            <button
+                              onClick={() => {
+                                setIsPaymentHistoryOpen(false);
+                                handleOpenRecordPayment(historyEMI, inst.installmentNumber);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-[10px] transition-all cursor-pointer active:scale-95"
+                            >
+                              Pay
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Attached Payment Transactions for this installment */}
+                      {matchingPayments.length > 0 && (
+                        <div className="pt-2 border-t border-slate-200/40 dark:border-white/5 space-y-1">
+                          {matchingPayments.map((pmt) => (
+                            <div key={pmt.id} className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                              <span>
+                                💳 Payment on {pmt.paymentDate} {pmt.notes ? `• ${pmt.notes}` : ''}
+                              </span>
+                              <strong className="text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(pmt.amount)}
+                              </strong>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Individual Payment Transactions History */}
+            <div className="space-y-3 pt-2 border-t border-slate-200/50 dark:border-white/10">
+              <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                Recorded Payments Log
+              </h4>
+
+              {emiPayments.filter((p) => p.emiId === historyEMI.id).length === 0 ? (
+                <p className="text-xs text-slate-400 p-4 rounded-2xl glass-subtle text-center">
+                  No individual payment records stored yet.
+                </p>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[200px] overflow-y-auto">
+                  {emiPayments
+                    .filter((p) => p.emiId === historyEMI.id)
+                    .map((pmt) => (
+                      <div key={pmt.id} className="py-2.5 flex items-center justify-between text-xs">
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">
+                            Installment #{pmt.installmentNumber} Payment
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            {pmt.paymentDate} {pmt.notes ? `• ${pmt.notes}` : ''}
+                          </p>
+                        </div>
+                        <span className="font-black text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(pmt.amount)}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setIsPaymentHistoryOpen(false)}
+                className="px-5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Close History
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE EMI CONFIRMATION MODAL */}
+      {deletingEMI && (
+        <ConfirmDialog
+          isOpen={isDeleteConfirmOpen}
+          title="Delete EMI?"
+          description={
+            emiPayments.filter((p) => p.emiId === deletingEMI.id).length > 0
+              ? `This EMI has ${emiPayments.filter((p) => p.emiId === deletingEMI.id).length} payment record(s). Deleting it may permanently remove its financial history.`
+              : `Are you sure you want to delete "${deletingEMI.purchaseTitle || deletingEMI.title}"?`
+          }
+          confirmText="Delete EMI"
+          cancelText="Cancel"
+          variant="danger"
+          isLoading={isDeletingEMI}
+          onConfirm={handleConfirmDeleteEMI}
+          onClose={() => {
+            setIsDeleteConfirmOpen(false);
+            setDeletingEMI(null);
+          }}
+        />
       )}
     </div>
   );

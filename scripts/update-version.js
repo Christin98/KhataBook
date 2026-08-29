@@ -99,15 +99,23 @@ try {
         summary: `Automated build record created on ${todayStr} at ${buildTimestamp}.`,
         isCurrent: true,
         highlights: [
-          `Build ${versionString} (${stage})`,
-          'Automated changelog preservation'
+          '⚡ Minor performance improvements and optimizations.',
+          '🛡️ Improved stability and overall app performance.',
+          '✨ Minor UI/UX refinements.',
+          '🐛 Bug fixes and internal improvements.'
         ],
         features: [
           {
-            title: `${stage} Build`,
-            description: `Automated ${stage} build verification passed.`,
-            tag: stage
+            title: 'Performance & UX Refinements',
+            description: 'Minor performance improvements, UI/UX refinements, and stability optimizations.',
+            tag: 'Improved'
           }
+        ],
+        fixes: [
+          'Minor performance improvements and optimizations.',
+          'Improved stability and overall app performance.',
+          'Minor UI/UX refinements.',
+          'Bug fixes and internal improvements.'
         ]
       };
       changelogData[targetKey] = [newEntry, ...changelogData[targetKey].map((c) => ({ ...c, isCurrent: false }))];

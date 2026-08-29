@@ -1,7 +1,19 @@
 export type TransactionType = 'expense' | 'income' | 'transfer';
 export type AccountType = 'bank' | 'cash' | 'wallet' | 'savings' | 'other';
 export type SplitType = 'equal' | 'exact' | 'percentage' | 'shares';
-export type LoanType = 'personal' | 'home' | 'vehicle' | 'education' | 'other';
+export type LoanType =
+  | 'Personal Loan'
+  | 'Home Loan'
+  | 'Vehicle Loan'
+  | 'Education Loan'
+  | 'Other Loan'
+  | 'personal'
+  | 'home'
+  | 'vehicle'
+  | 'education'
+  | 'other';
+export type LoanInterestType = 'Reducing Balance' | 'Flat';
+export type LoanStatus = 'Active' | 'Upcoming' | 'Overdue' | 'Completed' | 'Archived';
 export type RecurrenceType = 'once' | 'weekly' | 'monthly' | 'yearly';
 export type ReminderStatus = 'pending' | 'paid' | 'overdue';
 
@@ -141,7 +153,7 @@ export type CardRewardType = 'None' | 'Cashback' | 'Reward Points' | 'Miles' | '
 export type StatementStatus = 'Upcoming' | 'Due' | 'Partially Paid' | 'Paid' | 'Overdue';
 export type CardPaymentType = 'minimum' | 'statement' | 'full' | 'custom';
 export type EMIType = 'No-cost EMI' | 'Regular EMI';
-export type EMIStatus = 'Active' | 'Completed' | 'Cancelled' | 'Preclosed';
+export type EMIStatus = 'Active' | 'Completed' | 'Archived' | 'Cancelled' | 'Preclosed';
 
 export interface CreditCard {
   id: string;
@@ -202,6 +214,7 @@ export interface EMI {
   purchaseTitle?: string;
   purchaseAmount: number;
   downPayment?: number;
+  financedAmount?: number;
   principalAmount: number;
   interestAmount?: number;
   processingFee?: number;
@@ -210,16 +223,35 @@ export interface EMI {
   monthlyEmi?: number;
   emiAmount: number;
   tenureMonths: number;
-  paidMonths: number;
+  paidMonths?: number;
   paidInstallments?: number;
   remainingInstallments?: number;
   interestRate: number;
   emiType?: EMIType;
   startDate?: string;
   firstDueDate?: string;
-  nextDueDate: string;
+  nextDueDate?: string;
+  dueDay?: number;
+  notes?: string;
   status?: EMIStatus;
+  isArchived?: boolean;
+  isDeleted?: boolean;
   createdAt: string;
+  updatedAt?: string;
+}
+
+export interface EMIPayment {
+  id: string;
+  emiId: string;
+  cardId: string;
+  installmentNumber: number;
+  amount: number;
+  paymentDate: string;
+  accountId?: string;
+  notes?: string;
+  transactionId?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface EMIInstallment {
@@ -228,7 +260,11 @@ export interface EMIInstallment {
   emiAmount: number;
   principal: number;
   interest: number;
-  status: 'Paid' | 'Upcoming' | 'Due' | 'Overdue' | 'Skipped';
+  paidAmount?: number;
+  remainingAmount?: number;
+  status: 'Paid' | 'Partially Paid' | 'Upcoming' | 'Due' | 'Overdue' | 'Skipped';
+  paymentDate?: string;
+  payments?: EMIPayment[];
 }
 
 export interface Loan {
@@ -237,15 +273,79 @@ export interface Loan {
   loanName: string;
   lender: string;
   loanType: LoanType;
-  principal: number;
-  interestRate: number;
+  principal: number; // Original loan amount
+  interestRate: number; // Annual interest rate in %
+  interestType?: LoanInterestType; // Default 'Reducing Balance'
   tenureMonths: number;
   emiAmount: number;
-  paidMonths: number;
+  paidMonths?: number;
   startDate: string;
-  endDate: string;
-  paymentDayOfMonth: number;
+  endDate?: string;
+  paymentDayOfMonth?: number;
+  dueDay?: number;
+  linkedAccountId?: string;
+  notes?: string;
+  outstandingPrincipal?: number;
+  status?: LoanStatus;
+  isArchived?: boolean;
+  isDeleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoanPayment {
+  id: string;
+  loanId: string;
+  userId: string;
+  installmentNumber: number;
+  amount: number;
+  paymentDate: string;
+  principalComponent: number;
+  interestComponent: number;
+  accountId?: string;
+  transactionId?: string;
+  notes?: string;
+  status?: 'Paid' | 'Partially Paid';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LoanAmortizationRow {
+  installmentNumber: number;
+  dueDate: string;
+  openingPrincipal: number;
+  emiAmount: number;
+  principalComponent: number;
+  interestComponent: number;
+  closingPrincipal: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: 'Paid' | 'Partially Paid' | 'Upcoming' | 'Due' | 'Overdue';
+  paymentDate?: string;
+  payments?: LoanPayment[];
+}
+
+export interface LoanDetailedSummary {
+  originalPrincipal: number;
   outstandingPrincipal: number;
+  totalPrincipalPaid: number;
+  totalInterestPaid: number;
+  totalInterestRemaining: number;
+  totalAmountPaid: number;
+  totalPayable: number;
+  totalOutstanding: number;
+  monthlyEMI: number;
+  totalTenure: number;
+  paidInstallmentsCount: number;
+  partiallyPaidCount: number;
+  remainingInstallmentsCount: number;
+  progressPercentage: number;
+  nextDueDate: string;
+  nextDueStatus: 'Paid' | 'Partially Paid' | 'Upcoming' | 'Due' | 'Overdue';
+  overdueDays: number;
+  isCompleted: boolean;
+  isArchived: boolean;
+  amortizationSchedule: LoanAmortizationRow[];
 }
 
 export interface Budget {

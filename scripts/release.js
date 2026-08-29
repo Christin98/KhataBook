@@ -36,6 +36,30 @@ function run(cmd, errorMessage) {
   }
 }
 
+const DEFAULT_CHANGELOG = {
+  title: 'Performance & Stability Improvements',
+  summary: 'Minor performance improvements, UI/UX refinements, and stability optimizations.',
+  highlights: [
+    '⚡ Minor performance improvements and optimizations.',
+    '🛡️ Improved stability and overall app performance.',
+    '✨ Minor UI/UX refinements.',
+    '🐛 Bug fixes and internal improvements.'
+  ],
+  features: [
+    {
+      title: 'Performance & UX Refinements',
+      description: 'Minor performance improvements, UI/UX refinements, and stability optimizations.',
+      tag: 'Improved'
+    }
+  ],
+  fixes: [
+    'Minor performance improvements and optimizations.',
+    'Improved stability and overall app performance.',
+    'Minor UI/UX refinements.',
+    'Bug fixes and internal improvements.'
+  ]
+};
+
 // 1. Read package.json and changelog-data.json
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const changelog = JSON.parse(fs.readFileSync(changelogDataPath, 'utf8'));
@@ -82,24 +106,25 @@ if (isBetaRelease) {
       version: newVersionStr,
       stage: 'Beta Flight',
       date: today,
-      title: customMessage || `Beta Flight ${newVersionStr}`,
-      summary: customMessage ? `Beta candidate build: ${customMessage}` : 'Beta flight candidate build with live feature verifications.',
+      title: customMessage || DEFAULT_CHANGELOG.title,
+      summary: customMessage ? `Beta candidate build: ${customMessage}` : DEFAULT_CHANGELOG.summary,
       isCurrent: true,
-      highlights: [
-        `🚀 Flight release ${newVersionStr}`,
-        '⚡ Verified local compilation & test suites',
-        '🔒 Private beta flight access gated'
-      ],
-      features: [
-        {
-          title: customMessage || 'Beta Flight Updates',
-          description: 'Newest changes and fixes ready for flight candidate testing.',
-          tag: 'Beta Flight'
-        }
-      ],
-      fixes: [
-        'Automated pre-flight verification passed'
-      ]
+      highlights: customMessage
+        ? [
+            `🚀 Flight release ${newVersionStr}: ${customMessage}`,
+            ...DEFAULT_CHANGELOG.highlights
+          ]
+        : DEFAULT_CHANGELOG.highlights,
+      features: customMessage
+        ? [
+            {
+              title: customMessage,
+              description: 'Newest changes and fixes ready for flight candidate testing.',
+              tag: 'Beta Flight'
+            }
+          ]
+        : DEFAULT_CHANGELOG.features,
+      fixes: DEFAULT_CHANGELOG.fixes
     };
     changelog.beta = [betaEntry, ...changelog.beta.map((b) => ({ ...b, isCurrent: false }))];
   }
@@ -112,7 +137,7 @@ if (isBetaRelease) {
   // Commit & Push ONLY to origin beta
   console.log('\n📦 Committing & Pushing to Beta Flight (origin/beta)...');
   run('git add -A', 'Failed to stage git changes');
-  run(`git commit -m "flight(beta): ${newVersionStr} - ${customMessage || 'Beta release'}"`, 'Git commit failed');
+  run(`git commit -m "flight(beta): ${newVersionStr} - ${customMessage || DEFAULT_CHANGELOG.title}"`, 'Git commit failed');
   run('git push origin beta', 'Failed to push to origin beta');
 
   console.log('\n===============================================================');
@@ -156,24 +181,25 @@ if (isBetaRelease) {
       version: newVersionStr,
       stage: 'Production Stable',
       date: today,
-      title: customMessage || `KhataKithab ${newVersionStr} Official Release`,
-      summary: customMessage ? `Production release: ${customMessage}` : 'Official production release verified and promoted from beta flight.',
+      title: customMessage || DEFAULT_CHANGELOG.title,
+      summary: customMessage ? `Production release: ${customMessage}` : DEFAULT_CHANGELOG.summary,
       isCurrent: true,
-      highlights: [
-        `🌟 Official Release ${newVersionStr}`,
-        '⚡ Complete production security & encryption compliance',
-        '💎 High-performance release bundle on Netlify CDN'
-      ],
-      features: [
-        {
-          title: customMessage || 'Production Enhancements',
-          description: 'Stable feature enhancements promoted after successful beta testing.',
-          tag: 'Stable'
-        }
-      ],
-      fixes: [
-        'Full test harness and flight testing verified'
-      ]
+      highlights: customMessage
+        ? [
+            `🌟 Official Release ${newVersionStr}: ${customMessage}`,
+            ...DEFAULT_CHANGELOG.highlights
+          ]
+        : DEFAULT_CHANGELOG.highlights,
+      features: customMessage
+        ? [
+            {
+              title: customMessage,
+              description: 'Stable feature enhancements promoted after successful beta testing.',
+              tag: 'Stable'
+            }
+          ]
+        : DEFAULT_CHANGELOG.features,
+      fixes: DEFAULT_CHANGELOG.fixes
     };
     changelog.prod = [prodEntry, ...changelog.prod.map((p) => ({ ...p, isCurrent: false }))];
   }

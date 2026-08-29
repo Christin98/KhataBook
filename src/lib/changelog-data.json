@@ -222,12 +222,55 @@
   ],
   "beta": [
     {
+      "version": "v0.5.5-beta.10",
+      "stage": "Beta Flight",
+      "date": "2026-08-30",
+      "title": "Loans & Credit Card EMI Management System",
+      "summary": "Major flight release introducing comprehensive Loan and Credit Card EMI management with 3-dot action menus, payment history preservation, amortization schedules, partial payment tracking, and strict financial entity isolation.",
+      "isCurrent": true,
+      "highlights": [
+        "💳 Credit Card EMIs: Complete 3-dot action menu with Edit, Record Payment, History, Archive, and Safe Delete",
+        "🏦 Loans Management: Full lifecycle tracking with Amortization Schedules and Reducing/Flat interest calculation engine",
+        "💰 Installment Tracking: Support for partial and multi-payment installment completions with remaining balances",
+        "🛡️ Payment Preservation: Strict protection of historical payments when updating loan or EMI terms",
+        "⚠️ Entity Isolation: 100% architectural separation between Credit Card EMIs and Borrowed Loans"
+      ],
+      "features": [
+        {
+          "title": "Credit Card EMI Lifecycle",
+          "description": "Added Edit EMI, Record Payment, Payment History, installment-level tracking, partial payments, progress meters, next due dates, overdue/completed statuses, archive, and safe delete.",
+          "tag": "Credit Cards"
+        },
+        {
+          "title": "Loan Management & Amortization",
+          "description": "Added Edit Loan, Record Payment, Payment History, Amortization Schedule table, principal/interest component breakdown, partial payments, overdue detection (not overdue if due today), and archive/restore.",
+          "tag": "Loans"
+        },
+        {
+          "title": "Validation & Financial Data Safety",
+          "description": "Validation for financial amounts, NaN/Infinity protection, date and tenure validation, 100% progress capping, payment preservation on edit, and confirmation dialogs before deleting records with payment history.",
+          "tag": "Security"
+        },
+        {
+          "title": "Independent Data Architecture",
+          "description": "Separated EMI details from EMI payment records and Loan details from Loan payment records for accurate historical integrity and audit logging.",
+          "tag": "Architecture"
+        }
+      ],
+      "fixes": [
+        "Minor performance improvements and optimizations.",
+        "Improved stability and overall app performance.",
+        "Minor UI/UX refinements.",
+        "Bug fixes and internal improvements."
+      ]
+    },
+    {
       "version": "v0.5.5-beta.1",
       "stage": "Beta Flight",
       "date": "2026-08-29",
       "title": "Beta Flight v0.5.5-beta.1 - Budgets & Goals Release Candidate",
       "summary": "Beta candidate flight featuring Category Budgets & Savings Goals, persistent Global Period Filters across devices, Centralized SHA-256 duplicate detection, and live monetary input validation.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "🎯 Unlocked Category Budgets & Financial Savings Goals in navigation",
         "📅 Global Period Filter with persistent /api/preferences sync",
@@ -386,12 +429,172 @@
   ],
   "dev": [
     {
+      "version": "v0.5.5-beta.10",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.10",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0038.",
+      "isCurrent": true,
+      "highlights": [
+        "⚡ Minor performance improvements and optimizations.",
+        "🛡️ Improved stability and overall app performance.",
+        "✨ Minor UI/UX refinements.",
+        "🐛 Bug fixes and internal improvements."
+      ],
+      "features": [
+        {
+          "title": "Performance & UX Refinements",
+          "description": "Minor performance improvements, UI/UX refinements, and stability optimizations.",
+          "tag": "Improved"
+        }
+      ],
+      "fixes": [
+        "Minor performance improvements and optimizations.",
+        "Improved stability and overall app performance.",
+        "Minor UI/UX refinements.",
+        "Bug fixes and internal improvements."
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.9",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.9",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0036.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.9 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.8",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.8",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0034.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.8 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.7",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.7",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0034.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.7 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.6",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.6",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0034.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.6 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.5",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.5",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0026.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.5 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.4",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.4",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0025.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.4 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
+      "version": "v0.5.5-beta.3",
+      "stage": "Local Dev",
+      "date": "2026-08-30",
+      "title": "Local Dev Build v0.5.5-beta.3",
+      "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0025.",
+      "isCurrent": false,
+      "highlights": [
+        "Build v0.5.5-beta.3 (Local Dev)",
+        "Automated changelog preservation"
+      ],
+      "features": [
+        {
+          "title": "Local Dev Build",
+          "description": "Automated Local Dev build verification passed.",
+          "tag": "Local Dev"
+        }
+      ]
+    },
+    {
       "version": "v0.5.5-beta.2",
       "stage": "Local Dev",
       "date": "2026-08-30",
       "title": "Local Dev Build v0.5.5-beta.2",
       "summary": "Automated build record created on 2026-08-30 at 2026.08.30.0000.",
-      "isCurrent": true,
+      "isCurrent": false,
       "highlights": [
         "Build v0.5.5-beta.2 (Local Dev)",
         "Automated changelog preservation"

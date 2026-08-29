@@ -251,24 +251,79 @@ export function validateFinancialPayload(
       if (data.emiAmount !== undefined) sanitized.emiAmount = toSafeMoney(data.emiAmount);
       if (data.totalPayable !== undefined) sanitized.totalPayable = toSafeMoney(data.totalPayable);
       if (data.downPayment !== undefined) sanitized.downPayment = toSafeMoney(data.downPayment);
+      if (data.financedAmount !== undefined) sanitized.financedAmount = toSafeMoney(data.financedAmount);
       if (data.tenureMonths !== undefined) sanitized.tenureMonths = toSafeTenure(data.tenureMonths, 1, 120);
       if (data.paidMonths !== undefined) sanitized.paidMonths = Math.min(sanitized.tenureMonths || 120, toSafeTenure(data.paidMonths, 0, 120));
       if (data.paidInstallments !== undefined) sanitized.paidInstallments = Math.min(sanitized.tenureMonths || 120, toSafeTenure(data.paidInstallments, 0, 120));
       break;
     }
 
+    case 'emiPayments': {
+      if (data.amount === undefined || data.amount === null) {
+        errors.push('EMI payment amount is required.');
+      } else {
+        const rawAmt = typeof data.amount === 'number' ? data.amount : parseFloat(String(data.amount).replace(/[₹$,\s]/g, ''));
+        if (isNaN(rawAmt) || rawAmt <= 0) {
+          errors.push('EMI payment amount must be greater than ₹0.');
+        } else if (rawAmt > MAX_SAFE_TRANSACTION_AMOUNT) {
+          errors.push(`EMI payment amount cannot exceed realistic limit of ₹${MAX_SAFE_TRANSACTION_AMOUNT.toLocaleString('en-IN')}.`);
+        }
+        sanitized.amount = toSafeMoney(data.amount);
+      }
+      if (data.installmentNumber !== undefined) {
+        sanitized.installmentNumber = toSafeTenure(data.installmentNumber, 1, 120);
+      }
+      break;
+    }
+
     case 'loans': {
       if (data.principal !== undefined) {
-        const rawPrin = parseFloat(String(data.principal).replace(/[₹$,\s]/g, ''));
-        if (rawPrin > MAX_SAFE_BALANCE_AMOUNT) {
+        const rawPrin = typeof data.principal === 'number' ? data.principal : parseFloat(String(data.principal).replace(/[₹$,\s]/g, ''));
+        if (isNaN(rawPrin) || rawPrin <= 0) {
+          errors.push('Loan principal must be greater than ₹0.');
+        } else if (rawPrin > MAX_SAFE_BALANCE_AMOUNT) {
           errors.push(`Loan principal cannot exceed realistic limit of ₹${MAX_SAFE_BALANCE_AMOUNT.toLocaleString('en-IN')}.`);
         }
         sanitized.principal = toSafeMoney(data.principal);
       }
       if (data.outstandingPrincipal !== undefined) sanitized.outstandingPrincipal = toSafeMoney(data.outstandingPrincipal);
-      if (data.emiAmount !== undefined) sanitized.emiAmount = toSafeMoney(data.emiAmount);
-      if (data.interestRate !== undefined) sanitized.interestRate = toSafeInterestRate(data.interestRate);
-      if (data.tenureMonths !== undefined) sanitized.tenureMonths = toSafeTenure(data.tenureMonths, 1, 480);
+      if (data.emiAmount !== undefined) {
+        const rawEmi = typeof data.emiAmount === 'number' ? data.emiAmount : parseFloat(String(data.emiAmount).replace(/[₹$,\s]/g, ''));
+        if (isNaN(rawEmi) || rawEmi <= 0) {
+          errors.push('Monthly EMI must be greater than ₹0.');
+        }
+        sanitized.emiAmount = toSafeMoney(data.emiAmount);
+      }
+      if (data.interestRate !== undefined) {
+        const rawRate = typeof data.interestRate === 'number' ? data.interestRate : parseFloat(String(data.interestRate).replace(/[₹$,\s]/g, ''));
+        if (isNaN(rawRate) || rawRate < 0) {
+          errors.push('Interest rate cannot be negative.');
+        }
+        sanitized.interestRate = toSafeInterestRate(data.interestRate);
+      }
+      if (data.tenureMonths !== undefined) {
+        const rawTenure = typeof data.tenureMonths === 'number' ? data.tenureMonths : parseInt(String(data.tenureMonths), 10);
+        if (isNaN(rawTenure) || rawTenure <= 0) {
+          errors.push('Tenure must be at least 1 month.');
+        }
+        sanitized.tenureMonths = toSafeTenure(data.tenureMonths, 1, 480);
+      }
+      break;
+    }
+
+    case 'loanPayments': {
+      if (data.amount !== undefined) {
+        const rawAmt = typeof data.amount === 'number' ? data.amount : parseFloat(String(data.amount).replace(/[₹$,\s]/g, ''));
+        if (isNaN(rawAmt) || rawAmt <= 0) {
+          errors.push('Payment amount must be greater than ₹0.');
+        } else if (rawAmt > MAX_SAFE_TRANSACTION_AMOUNT) {
+          errors.push(`Payment amount cannot exceed realistic limit of ₹${MAX_SAFE_TRANSACTION_AMOUNT.toLocaleString('en-IN')}.`);
+        }
+        sanitized.amount = toSafeMoney(data.amount);
+      }
+      if (data.principalComponent !== undefined) sanitized.principalComponent = toSafeMoney(data.principalComponent);
+      if (data.interestComponent !== undefined) sanitized.interestComponent = toSafeMoney(data.interestComponent);
+      if (data.installmentNumber !== undefined) sanitized.installmentNumber = toSafeTenure(data.installmentNumber, 1, 480);
       break;
     }
 

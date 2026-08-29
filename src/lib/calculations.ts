@@ -4,7 +4,14 @@ import {
   CreditCard,
   EMI,
   EMIInstallment,
+  EMIPayment,
   Loan,
+  LoanPayment,
+  LoanAmortizationRow,
+  LoanDetailedSummary,
+  LoanInterestType,
+  LoanType,
+  LoanStatus,
   Circle,
   CircleExpense,
   Settlement,
@@ -445,9 +452,15 @@ export function getCreditUtilizationStatus(utilizationPct: number): {
 /**
  * Calculate Monthly EMI Commitment and Total Outstanding EMI Debt
  */
-export function calculateMonthlyEMICommitment(emis: EMI[]) {
+export function calculateMonthlyEMICommitment(emis: EMI[], payments: EMIPayment[] = []) {
   const activeEMIs = emis.filter(
-    (e) => e.status !== 'Completed' && e.status !== 'Preclosed' && e.status !== 'Cancelled'
+    (e) =>
+      e.status !== 'Completed' &&
+      e.status !== 'Preclosed' &&
+      e.status !== 'Cancelled' &&
+      e.status !== 'Archived' &&
+      !e.isArchived &&
+      !e.isDeleted
   );
 
   const monthlyCommitment = safeRound(
@@ -456,11 +469,8 @@ export function calculateMonthlyEMICommitment(emis: EMI[]) {
 
   const totalRemainingDebt = safeRound(
     activeEMIs.reduce((sum, e) => {
-      const emiAmt = e.monthlyEmi || e.emiAmount || 0;
-      const paidCount = e.paidInstallments ?? e.paidMonths ?? 0;
-      const paidAmt = paidCount * emiAmt;
-      const totalPay = e.totalPayable ?? e.purchaseAmount ?? e.principalAmount;
-      return sum + Math.max(0, totalPay - paidAmt);
+      const summary = calculateEMIDetailedSummary(e, payments);
+      return sum + summary.totalOutstanding;
     }, 0)
   );
 
@@ -710,6 +720,181 @@ export function calculateOngoingEMIFinancials(
   };
 }
 
+export interface EMIDetailedSummary {
+  originalAmount: number;
+  downPayment: number;
+  financedAmount: number;
+  emiAmount: number;
+  totalTenure: number;
+  totalPayable: number;
+  totalPaid: number;
+  totalOutstanding: number;
+  paidInstallmentsCount: number;
+  partiallyPaidCount: number;
+  remainingInstallmentsCount: number;
+  overdueCount: number;
+  progressPercentage: number;
+  nextDueDate: string;
+  nextInstallmentNumber: number | null;
+  isCompleted: boolean;
+  isArchived: boolean;
+  installments: EMIInstallment[];
+}
+
+/**
+ * Calculate comprehensive, money-safe metrics for an EMI incorporating individual EMIPayment records
+ */
+export function calculateEMIDetailedSummary(
+  emi: EMI,
+  payments: EMIPayment[] = []
+): EMIDetailedSummary {
+  const totalTenure = toSafeTenure(emi.tenureMonths || 12, 1, 120);
+  const originalAmount = toSafeMoney(emi.purchaseAmount || emi.principalAmount || 0);
+  const downPayment = toSafeMoney(emi.downPayment || 0);
+  const financedAmount = safeRound(Math.max(0, originalAmount - downPayment));
+  const emiAmount = toSafeMoney(emi.monthlyEmi || emi.emiAmount || safeRound(financedAmount / totalTenure));
+  const interestRate = toSafeInterestRate(emi.interestRate || 0);
+  const procFee = toSafeMoney(emi.processingFee || 0);
+  const taxAmt = toSafeMoney(emi.taxAmount || 0);
+  const totalAssetPrice = safeRound(originalAmount > 0 ? (originalAmount + procFee + taxAmt) : (financedAmount + downPayment + procFee + taxAmt));
+  const financedTotalPayable = safeRound(
+    emi.totalPayable && emi.totalPayable > 0
+      ? emi.totalPayable
+      : (emiAmount * totalTenure + procFee + taxAmt)
+  );
+  const totalPayable = safeRound(
+    financedTotalPayable >= totalAssetPrice
+      ? financedTotalPayable
+      : financedTotalPayable + downPayment
+  );
+
+  const baseDate = emi.startDate || emi.firstDueDate ? new Date(emi.startDate || emi.firstDueDate!) : new Date(emi.createdAt || new Date());
+  if (isNaN(baseDate.getTime())) baseDate.setTime(Date.now());
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filter payments linked to this EMI
+  const emiPayments = payments.filter((p) => p.emiId === emi.id);
+  const hasPaymentRecords = emiPayments.length > 0;
+
+  // Legacy fallback if no EMIPayment objects exist yet
+  const legacyPaidCount = Math.min(
+    totalTenure,
+    Math.max(0, toSafeTenure(emi.paidInstallments ?? emi.paidMonths ?? 0, 0, 120))
+  );
+
+  const installments: EMIInstallment[] = [];
+  let paidInstallmentsCount = 0;
+  let partiallyPaidCount = 0;
+  let overdueCount = 0;
+  let firstUnpaidInstallmentNum: number | null = null;
+  let nextDueDateStr = emi.nextDueDate || '';
+
+  for (let i = 1; i <= totalTenure; i++) {
+    const due = new Date(baseDate);
+    due.setMonth(baseDate.getMonth() + (i - 1));
+    due.setHours(0, 0, 0, 0);
+    const dueDateFormatted = due.toISOString().split('T')[0];
+
+    let paidForThis = 0;
+    let matchingPayments: EMIPayment[] = [];
+
+    if (hasPaymentRecords) {
+      matchingPayments = emiPayments.filter((p) => p.installmentNumber === i);
+      paidForThis = safeRound(matchingPayments.reduce((s, p) => s + toSafeMoney(p.amount), 0));
+    } else {
+      if (i <= legacyPaidCount) {
+        paidForThis = emiAmount;
+      }
+    }
+
+    const remainingForThis = safeRound(Math.max(0, emiAmount - paidForThis));
+    let status: 'Paid' | 'Partially Paid' | 'Upcoming' | 'Due' | 'Overdue' = 'Upcoming';
+
+    if (paidForThis >= emiAmount && emiAmount > 0) {
+      status = 'Paid';
+      paidInstallmentsCount++;
+    } else if (paidForThis > 0) {
+      status = 'Partially Paid';
+      partiallyPaidCount++;
+      if (firstUnpaidInstallmentNum === null) {
+        firstUnpaidInstallmentNum = i;
+        nextDueDateStr = dueDateFormatted;
+      }
+    } else {
+      if (due < today) {
+        status = 'Overdue';
+        overdueCount++;
+      } else {
+        const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 7) {
+          status = 'Due';
+        } else {
+          status = 'Upcoming';
+        }
+      }
+      if (firstUnpaidInstallmentNum === null) {
+        firstUnpaidInstallmentNum = i;
+        nextDueDateStr = dueDateFormatted;
+      }
+    }
+
+    installments.push({
+      installmentNumber: i,
+      dueDate: dueDateFormatted,
+      emiAmount,
+      principal: emiAmount,
+      interest: 0,
+      paidAmount: paidForThis,
+      remainingAmount: remainingForThis,
+      status,
+      paymentDate: matchingPayments[matchingPayments.length - 1]?.paymentDate,
+      payments: matchingPayments
+    });
+  }
+
+  const paidInstallmentsSum = hasPaymentRecords
+    ? safeRound(emiPayments.reduce((s, p) => s + toSafeMoney(p.amount), 0))
+    : safeRound(legacyPaidCount * emiAmount);
+
+  const totalPaid = safeRound(paidInstallmentsSum + downPayment);
+  const totalOutstanding = safeRound(Math.max(0, financedTotalPayable - paidInstallmentsSum));
+  const remainingInstallmentsCount = Math.max(0, totalTenure - paidInstallmentsCount);
+  const progressPercentage =
+    totalPayable > 0 ? Math.min(100, Math.max(0, safeRound((totalPaid / totalPayable) * 100))) : 0;
+
+  const isCompleted =
+    paidInstallmentsCount >= totalTenure ||
+    totalOutstanding <= 0 ||
+    emi.status === 'Completed' ||
+    emi.status === 'Preclosed';
+
+  if (isCompleted) {
+    nextDueDateStr = 'Completed';
+  }
+
+  return {
+    originalAmount,
+    downPayment,
+    financedAmount,
+    emiAmount,
+    totalTenure,
+    totalPayable,
+    totalPaid,
+    totalOutstanding,
+    paidInstallmentsCount,
+    partiallyPaidCount,
+    remainingInstallmentsCount,
+    overdueCount,
+    progressPercentage,
+    nextDueDate: nextDueDateStr || emi.nextDueDate || baseDate.toISOString().split('T')[0],
+    nextInstallmentNumber: firstUnpaidInstallmentNum,
+    isCompleted,
+    isArchived: emi.isArchived === true || emi.status === 'Archived',
+    installments
+  };
+}
+
 /**
  * Safely compute upcoming statement date and payment due date from day-of-month (1-31)
  */
@@ -832,14 +1017,343 @@ export function getRelativeDueLabel(
 }
 
 /**
- * Calculate Total Loans Outstanding
+ * Calculate Monthly EMI for a Loan based on Principal, Interest Rate, Tenure, and Method
  */
-export function calculateLoanSummary(loans: Loan[]) {
-  const totalOriginalPrincipal = safeRound(loans.reduce((sum, l) => sum + (l.principal || 0), 0));
-  const totalOutstandingPrincipal = safeRound(loans.reduce((sum, l) => sum + (l.outstandingPrincipal || 0), 0));
-  const totalMonthlyEMI = safeRound(loans.reduce((sum, l) => sum + (l.emiAmount || 0), 0));
+export function calculateLoanEMI(
+  principal: number,
+  annualRate: number,
+  tenureMonths: number,
+  interestType: LoanInterestType = 'Reducing Balance'
+): number {
+  const p = toSafeMoney(principal);
+  const r = toSafeInterestRate(annualRate);
+  const n = toSafeTenure(tenureMonths, 1, 480);
+  if (p <= 0 || n <= 0) return 0;
 
-  return { totalOriginalPrincipal, totalOutstandingPrincipal, totalMonthlyEMI };
+  if (interestType === 'Flat') {
+    const totalInterest = (p * r * (n / 12)) / 100;
+    return safeRound((p + totalInterest) / n);
+  }
+
+  // Reducing Balance (Standard Amortization Formula)
+  const monthlyRate = r / (12 * 100);
+  if (monthlyRate === 0) return safeRound(p / n);
+
+  const factor = Math.pow(1 + monthlyRate, n);
+  const emi = (p * monthlyRate * factor) / (factor - 1);
+  return safeRound(emi);
+}
+
+/**
+ * Generate Complete Amortization Schedule for a Loan
+ */
+export function calculateLoanAmortizationSchedule(
+  loan: Loan,
+  payments: LoanPayment[] = []
+): LoanAmortizationRow[] {
+  const originalPrincipal = toSafeMoney(loan.principal);
+  const annualRate = toSafeInterestRate(loan.interestRate);
+  const totalTenure = toSafeTenure(loan.tenureMonths, 1, 480);
+  const interestType: LoanInterestType = loan.interestType || 'Reducing Balance';
+  const emiAmount = toSafeMoney(
+    loan.emiAmount && loan.emiAmount > 0
+      ? loan.emiAmount
+      : calculateLoanEMI(originalPrincipal, annualRate, totalTenure, interestType)
+  );
+
+  const baseDate = loan.startDate ? new Date(loan.startDate) : new Date(loan.createdAt || Date.now());
+  if (isNaN(baseDate.getTime())) baseDate.setTime(Date.now());
+  const dueDay = Math.min(31, Math.max(1, loan.dueDay || loan.paymentDayOfMonth || baseDate.getDate() || 10));
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const loanPayments = payments.filter((p) => p.loanId === loan.id);
+  const hasPaymentRecords = loanPayments.length > 0;
+  const legacyPaidCount = Math.min(
+    totalTenure,
+    Math.max(0, toSafeTenure(loan.paidMonths || 0, 0, 480))
+  );
+
+  const schedule: LoanAmortizationRow[] = [];
+  let currentBalance = originalPrincipal;
+  const monthlyRate = annualRate / (12 * 100);
+
+  // For flat rate:
+  const flatMonthlyPrincipal = safeRound(originalPrincipal / totalTenure);
+  const flatMonthlyInterest = safeRound(((originalPrincipal * annualRate * (totalTenure / 12)) / 100) / totalTenure);
+
+  for (let i = 1; i <= totalTenure; i++) {
+    // Determine due date for installment i
+    const due = new Date(baseDate.getFullYear(), baseDate.getMonth() + (i - 1), dueDay);
+    const maxDaysInMonth = new Date(due.getFullYear(), due.getMonth() + 1, 0).getDate();
+    due.setDate(Math.min(dueDay, maxDaysInMonth));
+    due.setHours(0, 0, 0, 0);
+    const dueDateFormatted = due.toISOString().split('T')[0];
+
+    const opening = currentBalance;
+    let interestPart = 0;
+    let principalPart = 0;
+
+    if (interestType === 'Flat') {
+      principalPart = Math.min(opening, flatMonthlyPrincipal);
+      interestPart = flatMonthlyInterest;
+    } else {
+      // Reducing Balance
+      interestPart = safeRound(opening * monthlyRate);
+      principalPart = safeRound(Math.min(opening, Math.max(0, emiAmount - interestPart)));
+      if (i === totalTenure) {
+        // Final adjustment to zero out remaining principal
+        principalPart = opening;
+      }
+    }
+
+    const closing = safeRound(Math.max(0, opening - principalPart));
+    currentBalance = closing;
+
+    // Check payments for this installment
+    let paidForThis = 0;
+    let matchingPayments: LoanPayment[] = [];
+
+    if (hasPaymentRecords) {
+      matchingPayments = loanPayments.filter((p) => p.installmentNumber === i);
+      paidForThis = safeRound(matchingPayments.reduce((s, p) => s + toSafeMoney(p.amount), 0));
+    } else {
+      if (i <= legacyPaidCount) {
+        paidForThis = emiAmount;
+      }
+    }
+
+    const remainingForThis = safeRound(Math.max(0, emiAmount - paidForThis));
+    let status: 'Paid' | 'Partially Paid' | 'Upcoming' | 'Due' | 'Overdue' = 'Upcoming';
+
+    if (paidForThis >= emiAmount && emiAmount > 0) {
+      status = 'Paid';
+    } else if (paidForThis > 0) {
+      status = 'Partially Paid';
+    } else {
+      if (due < today) {
+        status = 'Overdue';
+      } else {
+        const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 7) {
+          status = 'Due';
+        } else {
+          status = 'Upcoming';
+        }
+      }
+    }
+
+    schedule.push({
+      installmentNumber: i,
+      dueDate: dueDateFormatted,
+      openingPrincipal: opening,
+      emiAmount,
+      principalComponent: principalPart,
+      interestComponent: interestPart,
+      closingPrincipal: closing,
+      paidAmount: paidForThis,
+      remainingAmount: remainingForThis,
+      status,
+      paymentDate: matchingPayments[matchingPayments.length - 1]?.paymentDate,
+      payments: matchingPayments
+    });
+  }
+
+  return schedule;
+}
+
+/**
+ * Calculate Detailed Summary and Repayment Metrics for a Single Loan
+ */
+export function calculateLoanDetailedSummary(
+  loan: Loan,
+  payments: LoanPayment[] = []
+): LoanDetailedSummary {
+  const originalPrincipal = toSafeMoney(loan.principal);
+  const totalTenure = toSafeTenure(loan.tenureMonths, 1, 480);
+  const amortizationSchedule = calculateLoanAmortizationSchedule(loan, payments);
+  const emiAmount = amortizationSchedule[0]?.emiAmount || toSafeMoney(loan.emiAmount);
+
+  const loanPayments = payments.filter((p) => p.loanId === loan.id);
+  const hasPaymentRecords = loanPayments.length > 0;
+
+  let totalPrincipalPaid = 0;
+  let totalInterestPaid = 0;
+  let paidInstallmentsCount = 0;
+  let partiallyPaidCount = 0;
+  let nextDueDate = '';
+  let nextDueStatus: 'Paid' | 'Partially Paid' | 'Upcoming' | 'Due' | 'Overdue' = 'Upcoming';
+  let overdueDays = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  amortizationSchedule.forEach((row) => {
+    if (row.status === 'Paid') {
+      paidInstallmentsCount++;
+      totalPrincipalPaid += row.principalComponent;
+      totalInterestPaid += row.interestComponent;
+    } else if (row.status === 'Partially Paid') {
+      partiallyPaidCount++;
+      // Calculate proportional principal & interest for partial payments
+      const ratio = row.emiAmount > 0 ? Math.min(1, row.paidAmount / row.emiAmount) : 0;
+      totalPrincipalPaid += safeRound(row.principalComponent * ratio);
+      totalInterestPaid += safeRound(row.interestComponent * ratio);
+
+      if (!nextDueDate) {
+        nextDueDate = row.dueDate;
+        nextDueStatus = 'Partially Paid';
+        const rowDue = new Date(row.dueDate);
+        if (rowDue < today) {
+          overdueDays = Math.ceil((today.getTime() - rowDue.getTime()) / (1000 * 60 * 60 * 24));
+        }
+      }
+    } else {
+      if (!nextDueDate) {
+        nextDueDate = row.dueDate;
+        nextDueStatus = row.status;
+        const rowDue = new Date(row.dueDate);
+        if (rowDue < today) {
+          overdueDays = Math.ceil((today.getTime() - rowDue.getTime()) / (1000 * 60 * 60 * 24));
+        }
+      }
+    }
+  });
+
+  // If explicit payment records exist with custom principal/interest breakdowns, honor them
+  if (hasPaymentRecords) {
+    const explicitPrincipalSum = loanPayments.reduce(
+      (s, p) => s + (p.principalComponent !== undefined && p.principalComponent > 0 ? toSafeMoney(p.principalComponent) : 0),
+      0
+    );
+    const explicitInterestSum = loanPayments.reduce(
+      (s, p) => s + (p.interestComponent !== undefined && p.interestComponent > 0 ? toSafeMoney(p.interestComponent) : 0),
+      0
+    );
+
+    if (explicitPrincipalSum > 0 || explicitInterestSum > 0) {
+      totalPrincipalPaid = safeRound(explicitPrincipalSum);
+      totalInterestPaid = safeRound(explicitInterestSum);
+    }
+  }
+
+  totalPrincipalPaid = safeRound(Math.min(originalPrincipal, totalPrincipalPaid));
+  const outstandingPrincipal = safeRound(Math.max(0, originalPrincipal - totalPrincipalPaid));
+
+  const totalTheoreticalInterest = safeRound(
+    amortizationSchedule.reduce((s, r) => s + r.interestComponent, 0)
+  );
+  const totalInterestRemaining = safeRound(Math.max(0, totalTheoreticalInterest - totalInterestPaid));
+  const totalAmountPaid = safeRound(totalPrincipalPaid + totalInterestPaid);
+  const totalPayable = safeRound(originalPrincipal + totalTheoreticalInterest);
+  const totalOutstanding = safeRound(outstandingPrincipal + totalInterestRemaining);
+
+  const remainingInstallmentsCount = Math.max(0, totalTenure - paidInstallmentsCount);
+  const progressPercentage =
+    originalPrincipal > 0
+      ? Math.min(100, Math.max(0, safeRound((totalPrincipalPaid / originalPrincipal) * 100)))
+      : 0;
+
+  const isCompleted =
+    outstandingPrincipal <= 0 ||
+    paidInstallmentsCount >= totalTenure ||
+    loan.status === 'Completed';
+
+  const isArchived = loan.isArchived === true || loan.status === 'Archived';
+
+  return {
+    originalPrincipal,
+    outstandingPrincipal,
+    totalPrincipalPaid,
+    totalInterestPaid,
+    totalInterestRemaining,
+    totalAmountPaid,
+    totalPayable,
+    totalOutstanding,
+    monthlyEMI: emiAmount,
+    totalTenure,
+    paidInstallmentsCount,
+    partiallyPaidCount,
+    remainingInstallmentsCount,
+    progressPercentage,
+    nextDueDate: nextDueDate || loan.endDate || 'Completed',
+    nextDueStatus: isCompleted ? 'Paid' : nextDueStatus,
+    overdueDays,
+    isCompleted,
+    isArchived,
+    amortizationSchedule
+  };
+}
+
+/**
+ * Calculate Top Level Loan Summaries across all Active Loans
+ */
+export function calculateLoanSummary(
+  loans: Loan[],
+  payments: LoanPayment[] = []
+): {
+  totalOriginalPrincipal: number;
+  totalOutstandingPrincipal: number;
+  totalMonthlyEMI: number;
+  totalInterestRemaining: number;
+  activeLoansCount: number;
+  nextPaymentDue: {
+    loanName: string;
+    amount: number;
+    dueDate: string;
+    overdueDays: number;
+    isOverdue: boolean;
+  } | null;
+} {
+  const nonDeletedLoans = loans.filter((l) => !l.isDeleted);
+  let totalOriginalPrincipal = 0;
+  let totalOutstandingPrincipal = 0;
+  let totalMonthlyEMI = 0;
+  let totalInterestRemaining = 0;
+  let activeLoansCount = 0;
+  let earliestDue: {
+    loanName: string;
+    amount: number;
+    dueDate: string;
+    overdueDays: number;
+    isOverdue: boolean;
+  } | null = null;
+
+  nonDeletedLoans.forEach((loan) => {
+    const summary = calculateLoanDetailedSummary(loan, payments);
+    totalOriginalPrincipal += summary.originalPrincipal;
+    totalOutstandingPrincipal += summary.outstandingPrincipal;
+    totalInterestRemaining += summary.totalInterestRemaining;
+
+    if (!summary.isArchived && !summary.isCompleted) {
+      activeLoansCount++;
+      totalMonthlyEMI += summary.monthlyEMI;
+
+      if (summary.nextDueDate && summary.nextDueDate !== 'Completed') {
+        if (
+          !earliestDue ||
+          new Date(summary.nextDueDate).getTime() < new Date(earliestDue.dueDate).getTime()
+        ) {
+          earliestDue = {
+            loanName: loan.loanName,
+            amount: summary.monthlyEMI,
+            dueDate: summary.nextDueDate,
+            overdueDays: summary.overdueDays,
+            isOverdue: summary.nextDueStatus === 'Overdue'
+          };
+        }
+      }
+    }
+  });
+
+  return {
+    totalOriginalPrincipal: safeRound(totalOriginalPrincipal),
+    totalOutstandingPrincipal: safeRound(totalOutstandingPrincipal),
+    totalMonthlyEMI: safeRound(totalMonthlyEMI),
+    totalInterestRemaining: safeRound(totalInterestRemaining),
+    activeLoansCount,
+    nextPaymentDue: earliestDue
+  };
 }
 
 /**
