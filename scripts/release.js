@@ -145,32 +145,38 @@ if (isBetaRelease) {
   run('node scripts/update-version.js --no-bump', 'Failed to update version constants');
 
   // Record into changelog-data.json
-  const prodEntry = {
-    version: newVersionStr,
-    stage: 'Production Stable',
-    date: today,
-    title: customMessage || `KhataKithab ${newVersionStr} Official Release`,
-    summary: customMessage ? `Production release: ${customMessage}` : 'Official production release verified and promoted from beta flight.',
-    isCurrent: true,
-    highlights: [
-      `🌟 Official Release ${newVersionStr}`,
-      '⚡ Complete production security & encryption compliance',
-      '💎 High-performance release bundle on Netlify CDN'
-    ],
-    features: [
-      {
-        title: customMessage || 'Production Enhancements',
-        description: 'Stable feature enhancements promoted after successful beta testing.',
-        tag: 'Stable'
-      }
-    ],
-    fixes: [
-      'Full test harness and flight testing verified'
-    ]
-  };
-
-  // Prepend to prod changelog
-  changelog.prod = [prodEntry, ...changelog.prod.map((p) => ({ ...p, isCurrent: false }))];
+  const existingProdIndex = changelog.prod.findIndex((p) => p.version === newVersionStr);
+  if (existingProdIndex !== -1) {
+    changelog.prod = changelog.prod.map((p, idx) => ({
+      ...p,
+      isCurrent: idx === existingProdIndex
+    }));
+  } else {
+    const prodEntry = {
+      version: newVersionStr,
+      stage: 'Production Stable',
+      date: today,
+      title: customMessage || `KhataKithab ${newVersionStr} Official Release`,
+      summary: customMessage ? `Production release: ${customMessage}` : 'Official production release verified and promoted from beta flight.',
+      isCurrent: true,
+      highlights: [
+        `🌟 Official Release ${newVersionStr}`,
+        '⚡ Complete production security & encryption compliance',
+        '💎 High-performance release bundle on Netlify CDN'
+      ],
+      features: [
+        {
+          title: customMessage || 'Production Enhancements',
+          description: 'Stable feature enhancements promoted after successful beta testing.',
+          tag: 'Stable'
+        }
+      ],
+      fixes: [
+        'Full test harness and flight testing verified'
+      ]
+    };
+    changelog.prod = [prodEntry, ...changelog.prod.map((p) => ({ ...p, isCurrent: false }))];
+  }
   fs.writeFileSync(changelogDataPath, JSON.stringify(changelog, null, 2) + '\n', 'utf8');
 
   // Run local production build verification
