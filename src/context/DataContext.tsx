@@ -20,10 +20,14 @@ import {
   Budget,
   Goal,
   Reminder,
+  RecurringPayment,
+  Subscription,
+  DetectedRecurringSuggestion,
   AppNotification,
   NotificationType,
   DatePeriod
 } from '@/lib/types';
+import { detectRecurringTransactions, normalizeMerchant } from '@/lib/recurringDetection';
 import { APP_INFO } from '@/lib/constants';
 import {
   auth,
@@ -103,6 +107,10 @@ interface DataContextType {
   emiPayments: EMIPayment[];
   loans: Loan[];
   loanPayments: LoanPayment[];
+  recurringPayments: RecurringPayment[];
+  subscriptions: Subscription[];
+  ignoredSuggestionKeys: string[];
+  detectedRecurringSuggestions: DetectedRecurringSuggestion[];
   budgets: Budget[];
   goals: Goal[];
   reminders: Reminder[];
@@ -211,6 +219,21 @@ interface DataContextType {
   restoreLoan: (id: string) => Promise<void>;
   deleteLoan: (id: string, softDelete?: boolean) => Promise<void>;
 
+  // Recurring Payments
+  addRecurringPayment: (payment: Omit<RecurringPayment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateRecurringPayment: (id: string, updates: Partial<RecurringPayment>) => Promise<void>;
+  deleteRecurringPayment: (id: string) => Promise<void>;
+
+  // Subscriptions
+  addSubscription: (sub: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateSubscription: (id: string, updates: Partial<Subscription>) => Promise<void>;
+  deleteSubscription: (id: string) => Promise<void>;
+
+  // Detection & Suggestion Controls
+  keepSuggestion: (suggestion: DetectedRecurringSuggestion, targetType: 'recurring' | 'subscription') => Promise<void>;
+  ignoreSuggestion: (key: string) => Promise<void>;
+  restoreIgnoredSuggestions: () => Promise<void>;
+
   addBudget: (budget: Omit<Budget, 'id' | 'spent'>) => void;
   updateBudget: (id: string, updates: Partial<Budget>) => void;
   deleteBudget: (id: string) => void;
@@ -291,6 +314,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [emiPayments, setEmiPayments] = useState<EMIPayment[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loanPayments, setLoanPayments] = useState<LoanPayment[]>([]);
+  const [recurringPayments, setRecurringPayments] = useState<RecurringPayment[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [ignoredSuggestionKeys, setIgnoredSuggestionKeys] = useState<string[]>([]);
+
+  const detectedRecurringSuggestions = React.useMemo(() => {
+    return detectRecurringTransactions(transactions, recurringPayments, subscriptions, ignoredSuggestionKeys);
+  }, [transactions, recurringPayments, subscriptions, ignoredSuggestionKeys]);
+
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -497,6 +528,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         subscribeToUserCollection<EMIPayment>(userId, 'emiPayments', setEmiPayments, undefined, cryptoKey),
         subscribeToUserCollection<Loan>(userId, 'loans', setLoans, undefined, cryptoKey),
         subscribeToUserCollection<LoanPayment>(userId, 'loanPayments', setLoanPayments, undefined, cryptoKey),
+        subscribeToUserCollection<RecurringPayment>(userId, 'recurringPayments', setRecurringPayments, undefined, cryptoKey),
+        subscribeToUserCollection<Subscription>(userId, 'subscriptions', setSubscriptions, undefined, cryptoKey),
+        subscribeToUserCollection<{ id: string; keys: string[] }>(
+          userId,
+          'ignoredSuggestions',
+          (list) => {
+            const item = list.find((x) => x.id === 'default');
+            if (item?.keys) setIgnoredSuggestionKeys(item.keys);
+          },
+          undefined,
+          cryptoKey
+        ),
         subscribeToUserCollection<Budget>(userId, 'budgets', setBudgets, undefined, cryptoKey),
         subscribeToUserCollection<Goal>(userId, 'goals', setGoals, undefined, cryptoKey),
         subscribeToUserCollection<Reminder>(userId, 'reminders', setReminders, undefined, cryptoKey),
@@ -564,6 +607,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         if (savedLoans) setLoans(JSON.parse(savedLoans));
         const savedLoanPayments = localStorage.getItem('khatakithab_loan_payments');
         if (savedLoanPayments) setLoanPayments(JSON.parse(savedLoanPayments));
+        const savedRecurring = localStorage.getItem('khatakithab_recurring_payments');
+        if (savedRecurring) setRecurringPayments(JSON.parse(savedRecurring));
+        const savedSubscriptions = localStorage.getItem('khatakithab_subscriptions');
+        if (savedSubscriptions) setSubscriptions(JSON.parse(savedSubscriptions));
+        const savedIgnored = localStorage.getItem('khatakithab_ignored_suggestions');
+        if (savedIgnored) setIgnoredSuggestionKeys(JSON.parse(savedIgnored));
         const savedBudgets = localStorage.getItem('khatakithab_budgets');
         if (savedBudgets) setBudgets(JSON.parse(savedBudgets));
         const savedGoals = localStorage.getItem('khatakithab_goals');
@@ -604,6 +653,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('khatakithab_emi_payments', JSON.stringify(emiPayments));
         localStorage.setItem('khatakithab_loans', JSON.stringify(loans));
         localStorage.setItem('khatakithab_loan_payments', JSON.stringify(loanPayments));
+        localStorage.setItem('khatakithab_recurring_payments', JSON.stringify(recurringPayments));
+        localStorage.setItem('khatakithab_subscriptions', JSON.stringify(subscriptions));
+        localStorage.setItem('khatakithab_ignored_suggestions', JSON.stringify(ignoredSuggestionKeys));
         localStorage.setItem('khatakithab_budgets', JSON.stringify(budgets));
         localStorage.setItem('khatakithab_goals', JSON.stringify(goals));
         localStorage.setItem('khatakithab_reminders', JSON.stringify(reminders));
@@ -629,6 +681,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     emiPayments,
     loans,
     loanPayments,
+    recurringPayments,
+    subscriptions,
+    ignoredSuggestionKeys,
     budgets,
     goals,
     reminders,
@@ -1646,6 +1701,141 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Recurring Payments Handlers
+  const addRecurringPayment = async (paymentData: Omit<RecurringPayment, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const cleanAmount = toSafeMoney(paymentData.amount);
+    const newPayment: RecurringPayment = {
+      ...paymentData,
+      amount: cleanAmount,
+      merchantPattern: paymentData.merchantPattern || normalizeMerchant(paymentData.name),
+      id: `rec_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'recurringPayments', newPayment.id, newPayment, cryptoKey);
+    } else {
+      setRecurringPayments((prev) => [...prev, newPayment]);
+    }
+  };
+
+  const updateRecurringPayment = async (id: string, updates: Partial<RecurringPayment>) => {
+    const existing = recurringPayments.find((r) => r.id === id);
+    if (!existing) return;
+    const cleanAmount = updates.amount !== undefined ? toSafeMoney(updates.amount) : existing.amount;
+    const updated: RecurringPayment = {
+      ...existing,
+      ...updates,
+      amount: cleanAmount,
+      merchantPattern: updates.name ? normalizeMerchant(updates.name) : existing.merchantPattern,
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'recurringPayments', id, updated, cryptoKey);
+    } else {
+      setRecurringPayments((prev) => prev.map((r) => (r.id === id ? updated : r)));
+    }
+  };
+
+  const deleteRecurringPayment = async (id: string) => {
+    if (firebaseUser) {
+      await deleteUserDoc(firebaseUser.uid, 'recurringPayments', id);
+    } else {
+      setRecurringPayments((prev) => prev.filter((r) => r.id !== id));
+    }
+  };
+
+  // Subscriptions Handlers
+  const addSubscription = async (subData: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const cleanAmount = toSafeMoney(subData.amount);
+    const newSub: Subscription = {
+      ...subData,
+      amount: cleanAmount,
+      merchantPattern: subData.merchantPattern || normalizeMerchant(subData.serviceName),
+      id: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'subscriptions', newSub.id, newSub, cryptoKey);
+    } else {
+      setSubscriptions((prev) => [...prev, newSub]);
+    }
+  };
+
+  const updateSubscription = async (id: string, updates: Partial<Subscription>) => {
+    const existing = subscriptions.find((s) => s.id === id);
+    if (!existing) return;
+    const cleanAmount = updates.amount !== undefined ? toSafeMoney(updates.amount) : existing.amount;
+    const updated: Subscription = {
+      ...existing,
+      ...updates,
+      amount: cleanAmount,
+      merchantPattern: updates.serviceName ? normalizeMerchant(updates.serviceName) : existing.merchantPattern,
+      updatedAt: new Date().toISOString()
+    };
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'subscriptions', id, updated, cryptoKey);
+    } else {
+      setSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)));
+    }
+  };
+
+  const deleteSubscription = async (id: string) => {
+    if (firebaseUser) {
+      await deleteUserDoc(firebaseUser.uid, 'subscriptions', id);
+    } else {
+      setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+    }
+  };
+
+  // Detection & Suggestion Controls
+  const keepSuggestion = async (
+    suggestion: DetectedRecurringSuggestion,
+    targetType: 'recurring' | 'subscription'
+  ) => {
+    if (targetType === 'subscription') {
+      await addSubscription({
+        userId: user.id,
+        serviceName: suggestion.originalMerchant,
+        category: suggestion.category || 'Subscriptions',
+        amount: suggestion.lastAmount || suggestion.averageCharge,
+        cadence: suggestion.cadence,
+        nextRenewalDate: suggestion.nextExpectedDate,
+        isActive: true,
+        merchantPattern: suggestion.normalizedMerchant
+      });
+    } else {
+      await addRecurringPayment({
+        userId: user.id,
+        name: suggestion.originalMerchant,
+        category: suggestion.category || 'Bills & Utilities',
+        amount: suggestion.lastAmount || suggestion.averageCharge,
+        cadence: suggestion.cadence,
+        nextDate: suggestion.nextExpectedDate,
+        isActive: true,
+        merchantPattern: suggestion.normalizedMerchant
+      });
+    }
+  };
+
+  const ignoreSuggestion = async (key: string) => {
+    const norm = normalizeMerchant(key);
+    if (!norm) return;
+    const updatedKeys = Array.from(new Set([...ignoredSuggestionKeys, norm]));
+    setIgnoredSuggestionKeys(updatedKeys);
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'ignoredSuggestions', 'default', { id: 'default', keys: updatedKeys }, cryptoKey);
+    }
+  };
+
+  const restoreIgnoredSuggestions = async () => {
+    setIgnoredSuggestionKeys([]);
+    if (firebaseUser) {
+      await saveUserDoc(firebaseUser.uid, 'ignoredSuggestions', 'default', { id: 'default', keys: [] }, cryptoKey);
+    }
+  };
+
   const addBudget = async (bgtData: Omit<Budget, 'id' | 'spent'>) => {
     const cleanLimit = toSafeMoney(bgtData.monthlyLimit);
     const newBgt: Budget = {
@@ -2040,6 +2230,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         emiPayments,
         loans,
         loanPayments,
+        recurringPayments,
+        subscriptions,
+        ignoredSuggestionKeys,
+        detectedRecurringSuggestions,
         budgets,
         goals,
         reminders,
@@ -2105,6 +2299,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         archiveLoan,
         restoreLoan,
         deleteLoan,
+        addRecurringPayment,
+        updateRecurringPayment,
+        deleteRecurringPayment,
+        addSubscription,
+        updateSubscription,
+        deleteSubscription,
+        keepSuggestion,
+        ignoreSuggestion,
+        restoreIgnoredSuggestions,
         addBudget,
         updateBudget,
         deleteBudget,

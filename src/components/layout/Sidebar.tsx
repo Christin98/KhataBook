@@ -19,7 +19,9 @@ import {
   Sparkles,
   Plus,
   LogOut,
-  Zap
+  Zap,
+  Repeat,
+  Tv
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { APP_INFO } from '@/lib/constants';
@@ -27,6 +29,8 @@ import { APP_INFO } from '@/lib/constants';
 export const NAV_ITEMS = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
   { label: 'Transactions', href: '/transactions', icon: Receipt },
+  { label: 'Recurring', href: '/recurring', icon: Repeat },
+  { label: 'Subscriptions', href: '/subscriptions', icon: Tv },
   { label: 'Circles', href: '/circles', icon: Users, badge: 'Split' },
   { label: 'Accounts', href: '/accounts', icon: Building2 },
   { label: 'Credit Cards', href: '/credit-cards', icon: CreditCard },

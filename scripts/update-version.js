@@ -22,8 +22,8 @@ const isProdBranch =
   netlifyBranch === 'production' ||
   appEnv === 'production';
 
-// Auto-increment build version unless --no-bump is passed
-const shouldBump = !process.argv.includes('--no-bump');
+// Auto-increment build version only when explicit --bump is passed
+const shouldBump = process.argv.includes('--bump');
 
 if (shouldBump) {
   let [versionCore, betaTag] = pkg.version.split('-beta.');

@@ -33,7 +33,9 @@ export default function SettingsPage() {
     isDevMode,
     setIsDevMode,
     resetToCleanLedger,
-    loadSampleDemoData
+    loadSampleDemoData,
+    ignoredSuggestionKeys,
+    restoreIgnoredSuggestions
   } = useData();
 
   const [displayName, setDisplayName] = useState(user.displayName);
@@ -41,6 +43,7 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState(user.timezone || 'Asia/Kolkata');
   const [dateFormat, setDateFormat] = useState(user.dateFormat || 'DD/MM/YYYY');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [restoreSuccess, setRestoreSuccess] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
@@ -264,6 +267,40 @@ export default function SettingsPage() {
         >
           <RotateCcw className="w-4 h-4" />
           <span>Reset to Clean Ledger</span>
+        </button>
+      </div>
+
+      {/* 4. Ignored Suggestions Recovery */}
+      <div className="glass-card p-6 sm:p-7 rounded-3xl space-y-4 shadow-2xl">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200/50 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="font-black text-base text-slate-900 dark:text-white">Recurring & Subscription Detection</h2>
+          </div>
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
+            {ignoredSuggestionKeys.length} Dismissed
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-400 font-medium">
+          Restore patterns and merchants that were previously dismissed or ignored from recurring bills and subscription detection suggestions.
+        </p>
+
+        <button
+          onClick={async () => {
+            await restoreIgnoredSuggestions();
+            setRestoreSuccess(true);
+            setTimeout(() => setRestoreSuccess(false), 2500);
+          }}
+          disabled={ignoredSuggestionKeys.length === 0}
+          className={`px-4 py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center gap-2 border cursor-pointer min-h-[44px] ${
+            ignoredSuggestionKeys.length > 0
+              ? 'glass-subtle hover:bg-slate-200/60 dark:hover:bg-slate-800 text-indigo-600 dark:text-indigo-400 border-indigo-500/30'
+              : 'opacity-50 cursor-not-allowed border-slate-200 dark:border-white/10 text-slate-400'
+          }`}
+        >
+          {restoreSuccess ? <Check className="w-4 h-4 text-emerald-500" /> : <RotateCcw className="w-4 h-4" />}
+          <span>{restoreSuccess ? 'Ignored Suggestions Restored!' : 'Restore Ignored Suggestions'}</span>
         </button>
       </div>
 

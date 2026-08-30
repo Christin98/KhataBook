@@ -441,3 +441,61 @@ export interface ChangelogRelease {
   isCurrent?: boolean;
 }
 
+export type CadenceType = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annual';
+export type ConfidenceLevel = 'High confidence' | 'Likely';
+export type RecurringPaymentKind = 'subscription' | 'bill' | 'loan' | 'other';
+
+export interface RecurringPayment {
+  id: string;
+  userId: string;
+  name: string;
+  category: string;
+  amount: number;
+  cadence: CadenceType;
+  nextDate: string;
+  accountId?: string;
+  isActive: boolean;
+  notes?: string;
+  merchantPattern?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  serviceName: string;
+  category: string;
+  amount: number;
+  cadence: CadenceType;
+  nextRenewalDate: string;
+  accountId?: string;
+  isActive: boolean;
+  planTier?: string;
+  notes?: string;
+  merchantPattern?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface DetectedRecurringSuggestion {
+  id: string;
+  normalizedMerchant: string;
+  originalMerchant: string;
+  category: string;
+  kind: 'subscription' | 'bill' | 'other';
+  cadence: CadenceType;
+  occurrenceCount: number;
+  confidence: ConfidenceLevel;
+  averageCharge: number;
+  monthlyEquivalent: number;
+  annualEquivalent: number;
+  nextExpectedDate: string;
+  jitterDays: number;
+  amountVariationPercent: number;
+  matchedTransactionIds: string[];
+  lastTransactionDate: string;
+  lastAmount: number;
+  isIgnored: boolean;
+}
+
